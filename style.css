@@ -26,7 +26,6 @@ body {
 .league {
     display: inline-flex;
     justify-content: left;
-    border: 1px solid blue;
 }
 
 h1 {
