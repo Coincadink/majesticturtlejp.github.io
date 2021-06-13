@@ -1,2 +1,2 @@
-# MajesticTurtleJP.github.io
+# majesticturtlejp.github.io
  John Peterson's personal website.
