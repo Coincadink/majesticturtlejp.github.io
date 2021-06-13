@@ -1,0 +1,60 @@
+:root {
+    --background: #222629;
+    --lightbackground: #474b4f;
+    --text: #ffffff;
+    --subtext: #6b6e70;
+    --accenty: #86c232;
+    --accentg: #61892f;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+body {
+    background: var(--background);
+
+    margin: 0px;
+    display: flex;
+    justify-content: center;
+    
+    color: var(--text);
+    font-family: sans-serif;
+    font-weight: normal;
+}
+
+.league {
+    display: inline-flex;
+    justify-content: left;
+    border: 1px solid blue;
+}
+
+h1 {
+    font-size: 5vw;
+    border: 1px solid red;
+    line-height: 80%;
+}
+
+h1::after {
+    background: var(--accentg);
+
+    content: "";
+    position: absolute;
+    height: 0.15em;
+    width: 36vw;
+    margin: 0px;
+
+    animation: expandFromLeft;
+    animation-duration: 1s;
+    transform-origin: left;
+    transition: transform 1s ease-out;
+}
+
+@keyframes expandFromLeft {
+    0% {
+        transform: scaleX(0);
+    }
+    100% {
+        transform: scaleX(1);
+    }
+}
