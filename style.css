@@ -35,7 +35,7 @@ h1 {
 }
 
 h1::after {
-    background: var(--accenty);
+    background: white;
 
     content: "";
     position: absolute;
