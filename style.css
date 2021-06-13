@@ -35,7 +35,7 @@ h1 {
 }
 
 h1::after {
-    background: white;
+    background: yellow;
 
     content: "";
     position: absolute;
