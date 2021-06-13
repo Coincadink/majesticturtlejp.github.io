@@ -40,7 +40,7 @@ h1::after {
 
     content: "";
     position: absolute;
-    height: 0.15em;
+    height: 0.5em;
     width: 36vw;
     margin: 0px;
 
