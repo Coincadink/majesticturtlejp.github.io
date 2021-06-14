@@ -1,0 +1,28 @@
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0px;
+}
+
+body {
+    background-color: #1a1a1d;
+}
+
+.sidebar {
+    background-color: #6f2232;
+    
+    width: 100px;
+    height: 100%;
+
+    position: fixed;
+
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+}
+
+svg {
+    margin: 25px;
+    fill: white;
+}
