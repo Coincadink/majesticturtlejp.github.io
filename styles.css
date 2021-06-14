@@ -1,28 +1,20 @@
-*,
-*::before,
-*::after {
-    box-sizing: border-box;
-    margin: 0px;
-}
-
 body {
-    background-color: #1a1a1d;
+  background-color: #1a1a1d;
 }
 
-.sidebar {
-    background-color: #6f2232;
-    
-    width: 100px;
-    height: 100%;
-
-    position: fixed;
-
-    display: flex;
-    align-items: center;
-    flex-direction: column;
+.profile {
+  --profile-diameter: 300px;
+  width: var(--profile-diameter);
+  height: var(--profile-diameter);
+  position: relative;
+  border-radius: 50%;
+  overflow: hidden;
 }
 
-svg {
-    margin: 25px;
-    fill: white;
+.profile img {
+  content: url("assets/John.jpg");
+  image-resolution: from-image 300dpi;
+  width: 100%;
+  position: absolute;
 }
+/*# sourceMappingURL=styles.css.map */
