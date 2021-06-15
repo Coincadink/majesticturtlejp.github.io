@@ -1,4 +1,4 @@
-@import 'config'
+@use '../sass' as a
 
 body
     background-color: $light-color
@@ -7,6 +7,7 @@ body
 
 img
     width: 100%
+    background-color: a.
 
 .showcase
     @include set-background($primary-color)
@@ -43,7 +44,3 @@ img
         h1
             font-size: 50px
             line-height: 1.2
-        
-@import 'utilities'
-@import 'buttons'
-@import 'mobile'
