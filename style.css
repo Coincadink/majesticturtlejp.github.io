@@ -79,35 +79,42 @@ select {
     font-weight: lighter;
     display: flex;
     align-items: center;
-    padding: 10px;
+    margin: 0px;
 }
 
 a {
-    padding-left: 20px;
     color: black;
+    padding: 20px;
     text-decoration: none; /* no underline */
 }
 
-.header img {
-    height: 40px;
+a:hover {
+    background-color: rgba(0, 0, 0, .2);
+}
+
+.header .img {
+  padding: 12px
+}
+
+.header .img img {
+  height: 40px;
 }
 
 .sec1 {
     position: relative;
     text-align: center;
     color: white;
-    height: 92.35vh;
+    width: 100%;
     overflow: hidden;
 }
 
 .sec1 img {
     width: 100%;
-
 }
 
 h1 {
     font-family: sans-serif;
-    font-size: 60px;
+    font-size: 5vw;
     font-weight: lighter;
     position: absolute;
     top: 50%;
@@ -116,7 +123,7 @@ h1 {
 }
 
 mark {
-    padding: 30px;
+    padding: 2vw;
     background-color: rgba(0, 0, 0, .4);
     color: white;
 }
