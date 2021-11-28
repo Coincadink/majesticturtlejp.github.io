@@ -1,11 +1,6 @@
 /*--- Fonts ---*/
 
-@font-face {
-    font-family: 'Barlow Condensed';
-    src: url('https://fonts.googleapis.com/css2?family=Barlow+Condensed&display=swap');
-    font-weight: normal;
-    font-style: normal;
-}
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed&display=swap');
 
 
 /*--- Reset ---*/
