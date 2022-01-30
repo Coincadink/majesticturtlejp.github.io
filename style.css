@@ -73,10 +73,42 @@ select {
   }
 }
 
-* {
-    background-color: black;
+body {
+  background-color: black;
 }
 
-.header_flex img {
-    width: 20%;
+.wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  width: 100%;
+}
+
+.split {
+  display: flex;
+  width: 940px;
+  height: 700px;
+  color: white;
+}
+
+.split .split-text {
+  flex: 1;
+
+  display: flex;
+  justify-content: center;
+  align-content: center;
+}
+
+.split .split-img {
+  flex: 1;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+.split .split-img img {
+  height: 80%;
 }
