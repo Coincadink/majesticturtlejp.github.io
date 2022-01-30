@@ -72,3 +72,11 @@ select {
     scroll-behavior: auto !important;
   }
 }
+
+* {
+    background-color: black;
+}
+
+.header_flex img {
+    width: 20%;
+}
