@@ -213,5 +213,14 @@ a::after {
   }
   .split {
     height: 0px;
+    transform: translateY(26vh)
+  }
+
+  .background {
+    transform: translateY(4vh)
+  }
+
+  .wrapper {
+    height: 80vh;
   }
 }
