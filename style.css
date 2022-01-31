@@ -212,6 +212,6 @@ a::after {
     height: 80px;
   }
   .split {
-    height: 100px;
+    height: 0px;
   }
 }
