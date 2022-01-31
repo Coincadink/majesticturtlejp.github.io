@@ -75,6 +75,7 @@ select {
 
 body {
   background-color: black;
+  font-family: 'Roboto', sans-serif;
 }
 
 .wrapper {
@@ -90,14 +91,8 @@ body {
   width: 940px;
   height: 700px;
   color: white;
-}
-
-.split .split-text {
-  flex: 1;
-
-  display: flex;
-  justify-content: center;
-  align-content: center;
+  
+  align-items: center;
 }
 
 .split .split-img {
@@ -106,9 +101,60 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  flex-direction: column;
+  height: 80%;
 }
 
 .split .split-img img {
-  height: 80%;
+  height: 100%;
+}
+
+.split .split-text {
+  flex: 1;
+
+  display: flex;
+  justify-content: center;
+  align-content: center;
+  flex-direction: column;
+
+  height: 280px;
+}
+
+.split .split-text h2 {
+  flex: 1;
+}
+
+.split .split-text h1 {
+  flex: 5;
+}
+
+.split .split-text p {
+  flex: 6;
+}
+
+h1 {
+  font-size: 80px;
+}
+
+.dot {
+  color: rgb(94,154,255);
+}
+
+.p {
+  text-align: justify;
+  text-justify: inter-word;
+}
+
+p {
+  color: rgb(152,152,152)
+}
+
+a {
+  text-decoration: none;
+  color: white;
+  padding-top: 30px;
+  font-size: 12px;
+}
+
+a::after {
+  color:white;
 }
