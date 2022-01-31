@@ -158,7 +158,7 @@ a {
 
 a::after {
   content: '';
-  width: 160px;
+  width: 152px;
   border-bottom: solid 1px rgb(94,154,255);
   position: absolute;
   transform: translate(-151px, 22px);
@@ -212,6 +212,6 @@ a::after {
     height: 80px;
   }
   .split {
-    height: 100%;
+    height: 100px;
   }
 }
