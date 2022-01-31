@@ -185,6 +185,9 @@ a::after {
     width: 153px;
     transform: translate(-152px, 22px);
   }
+  .split {
+    height: 100%;
+  }
 }
 
 @media only screen and (max-width: 530px) {
@@ -194,5 +197,8 @@ a::after {
   }
   .split .split-text {
     height: 80px;
+  }
+  .split {
+    height: 100%;
   }
 }
