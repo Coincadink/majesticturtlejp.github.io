@@ -146,6 +146,7 @@ h1 {
 
 p {
   color: rgb(152,152,152);
+  width: 80%;
 }
 
 a {
@@ -157,9 +158,41 @@ a {
 
 a::after {
   content: '';
-    width: 160px;
-    border-bottom: solid 1px rgb(94,154,255);
-    position: absolute;
-    transform: translate(-151px, 22px);
-    z-index: 1;
+  width: 160px;
+  border-bottom: solid 1px rgb(94,154,255);
+  position: absolute;
+  transform: translate(-151px, 22px);
+  z-index: 1;
+}
+
+@media only screen and (max-width: 1000px) {
+  .split .split-img {
+    flex: 0;
+  }
+  .split {
+    text-align: center;
+  }
+  .p {
+    text-align: center;
+    text-justify: center;
+    display: flex;
+  }
+  p {
+    padding-left: 100px;
+    padding-right: 100px;
+  }
+  a::after {
+    width: 153px;
+    transform: translate(-152px, 22px);
+  }
+}
+
+@media only screen and (max-width: 530px) {
+  .split .split-text p {
+    flex: 0;
+    display: none;
+  }
+  .split .split-text {
+    height: 80px;
+  }
 }
