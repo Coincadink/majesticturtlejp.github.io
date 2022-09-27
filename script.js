@@ -46,14 +46,36 @@ const dragElement = (element, dragzone) =>
     dragzone.onmousedown = dragMouseDown;
 };
 
-// TODO - Find a way to do this with arrays and classes/id's to have multiple draggables.
-
 // Fetch the draggable div and perform the dragElement function on it to give it dragging capabilities.
 
-const dragable1 = document.getElementById("dragable1"),
-dragzone1 = document.getElementById("dragzone1");
-dragElement(dragable1, dragzone1);
+draggables = document.getElementsByClassName("draggable"),
+dragzones = document.getElementsByClassName("dragzone");
+for (let i = 0; i < draggables.length; i++) { dragElement(draggables[i], dragzones[i]); }
 
-const dragable2 = document.getElementById("dragable2"),
-dragzone2 = document.getElementById("dragzone2");
-dragElement(dragable2, dragzone2);
+// Add a new randomized node when the spacebar is depressed.
+
+let playground = document.getElementById("draggable-playground");
+
+document.body.onkeydown = function(e) 
+{
+    if (e.code == "Backspace") 
+    {
+        playground.removeChild(playground.firstChild);
+    }
+
+    else if (e.code == "Space") 
+    {
+        // TODO - There simply has to be a cleaner solution to this?
+        
+        // Generate new node.
+        var newNode = document.createElement('div');
+        newNode.className = "draggable";
+        newNode.innerHTML = '<header class="dragzone">\n<div class="wrapper">\n<div class="name">Portfolio</div>\n<div class="about">No... seriously man.</div>\n</div>\n</header>';
+        
+        // Inject the new node into the environment.
+        playground.appendChild(newNode);
+
+        // Enable the new node to be dragged.
+        dragElement(newNode, newNode.firstChild);
+    }
+}

@@ -66,13 +66,13 @@ select {
     }
 }
 
-/* Custom CSS Styling. */
+/* Custom CSS Styling for nodes. */
 
 body {
-    background-color: rgb(20, 20, 20)
+    background-color: rgb(20, 20, 20);
 }
 
-#dragable {
+.draggable {
     width: 21rem;
     height: 21rem;
     border: 0.2rem solid #0f2c65;
@@ -83,12 +83,12 @@ body {
     transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-#dragable.drag {
-    border-color: white;
+.draggable .drag {
+    border-color: rgb(182, 17, 17);
     box-shadow: 3px 6px 24px rgba(0, 0, 0, 0.5);
 }
 
-#dragable #dragzone {
+.draggable .dragzone {
     width: 100%;
     height: 100%;
     cursor: move;
@@ -120,52 +120,16 @@ body {
     font-size: 16px;
 }
 
-/* DELETE ME - This is just temporary to test using multiple draggable divs. */
+/* Custom CSS Styling for background text. */
 
-#dragable1 {
-    width: 21rem;
-    height: 21rem;
-    border: 0.2rem solid #0f2c65;
-    border-radius: 0.2rem;
-    position: absolute;
-    z-index: 9;
-    box-shadow: 2px 4px 18px rgba(0, 0, 0, 0.2);
-    transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-#dragable1.drag {
-    border-color: yellow;
-    box-shadow: 3px 6px 24px rgba(0, 0, 0, 0.5);
-}
-
-#dragable1 #dragzone1 {
-    width: 100%;
-    height: 100%;
-    cursor: move;
-    z-index: 10;
-    background-color: #0f2c65;
-}
-
-#dragable2 {
-    width: 21rem;
-    height: 21rem;
-    border: 0.2rem solid #0f2c65;
-    border-radius: 0.2rem;
-    position: absolute;
-    z-index: 9;
-    box-shadow: 2px 4px 18px rgba(0, 0, 0, 0.2);
-    transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-#dragable2.drag {
-    border-color: green;
-    box-shadow: 3px 6px 24px rgba(0, 0, 0, 0.5);
-}
-
-#dragable2 #dragzone2 {
-    width: 100%;
-    height: 100%;
-    cursor: move;
-    z-index: 10;
-    background-color: #0f2c65;
+.text-background {
+    font-family: system-ui;
+    color: #646669;
+    font-size: 2em;
+    padding: .25em;
+    padding-top: 20%;
+    display: grid;
+    justify-content: center;
+    align-content: center;
+    text-align: center;
 }
