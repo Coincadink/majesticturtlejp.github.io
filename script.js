@@ -60,7 +60,7 @@ document.body.onkeydown = function(e)
 {
     if (e.code == "Backspace") 
     {
-        playground.removeChild(playground.firstChild);
+        playground.removeChild(playground.lastChild);
     }
 
     else if (e.code == "Space") 
