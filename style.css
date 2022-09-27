@@ -1,11 +1,11 @@
-/* Box sizing rules */
+/* This is a modern and comprehensive CSS reset. */
+
 *,
 *::before,
 *::after {
-  box-sizing: border-box;
+    box-sizing: border-box;
 }
 
-/* Remove default margin */
 body,
 h1,
 h2,
@@ -16,257 +16,156 @@ figure,
 blockquote,
 dl,
 dd {
-  margin: 0;
+    margin: 0;
 }
 
-/* Remove list styles on ul, ol elements with a list role, which suggests default styling will be removed */
 ul[role='list'],
 ol[role='list'] {
-  list-style: none;
+    list-style: none;
 }
 
-/* Set core root defaults */
 html:focus-within {
-  scroll-behavior: smooth;
+    scroll-behavior: smooth;
 }
 
-/* Set core body defaults */
 body {
-  min-height: 100vh;
-  text-rendering: optimizeSpeed;
-  line-height: 1.5;
+    min-height: 100vh;
+    text-rendering: optimizeSpeed;
+    line-height: 1.5;
 }
 
-/* A elements that don't have a class get default styles */
 a:not([class]) {
-  text-decoration-skip-ink: auto;
+    text-decoration-skip-ink: auto;
 }
 
-/* Make images easier to work with */
 img,
 picture {
-  max-width: 100%;
-  display: block;
+    max-width: 100%;
+    display: block;
 }
 
-/* Inherit fonts for inputs and buttons */
 input,
 button,
 textarea,
 select {
-  font: inherit;
+    font: inherit;
 }
+
+@media (prefers-reduced-motion: reduce) {
+    html:focus-within {
+        scroll-behavior: auto;
+    }
+    
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Custom CSS Styling. */
 
 body {
-  background-color: black;
-  font-family: 'Roboto', sans-serif;
+    background-color: rgb(20, 20, 20)
 }
 
-.wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  width: 100%;
-}
-
-.split {
-  display: flex;
-  width: 940px;
-  height: 700px;
-  color: white;
-  
-  align-items: center;
-}
-
-.split .split-img {
-  flex: 1;
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 80%;
-}
-
-.split .split-img img {
-  height: 100%;
-}
-
-.split .split-text {
-  flex: 1;
-
-  display: flex;
-  justify-content: center;
-  align-content: center;
-  flex-direction: column;
-
-  height: 280px;
-}
-
-.split .split-text h2 {
-  flex: 1;
-}
-
-.split .split-text h1 {
-  flex: 5;
-}
-
-.split .split-text p {
-  flex: 6;
-}
-
-h1 {
-  font-size: 80px;
-}
-
-.dot {
-  color: rgb(94,154,255);
-}
-
-.p {
-  text-align: justify;
-  text-justify: inter-word;
-}
-
-p {
-  color: rgb(152,152,152);
-  width: 80%;
-}
-
-a {
-  text-decoration: none;
-  color: white;
-  padding-top: 30px;
-  font-size: 12px;
-}
-
-.split a::after {
-  content: '';
-  width: 152px;
-  border-bottom: solid 1px rgb(94,154,255);
-  position: absolute;
-  transform: translate(-151px, 22px);
-  z-index: 1;
-}
-
-.background {
-  display: none;
-}
-
-@media only screen and (max-width: 1000px) {
-  .split .split-img {
-    flex: 0;
-  }
-  .split {
-    text-align: center;
-  }
-  .p {
-    text-align: center;
-    text-justify: center;
-    display: flex;
-  }
-  p {
-    padding-left: 100px;
-    padding-right: 100px;
-  }
-  a::after {
-    width: 153px;
-    transform: translate(-152px, 22px);
-  }
-  .split {
-    transform: translateY(100px);
-    height: 200px;
-  }
-
-  .background {
-    display: inline;
+#dragable {
+    width: 21rem;
+    height: 21rem;
+    border: 0.2rem solid #0f2c65;
+    border-radius: 0.2rem;
     position: absolute;
-    z-index: -1;
-    height: 60%;
-    transform: translateY(-50px);
-  }
+    z-index: 9;
+    box-shadow: 2px 4px 18px rgba(0, 0, 0, 0.2);
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-@media only screen and (max-width: 530px) {
-  .split .split-text p {
-    flex: 0;
-    display: none;
-  }
-  .split .split-text {
-    height: 80px;
-  }
-  .split {
-    height: 0px;
-    transform: translateY(26vh)
-  }
+#dragable.drag {
+    border-color: white;
+    box-shadow: 3px 6px 24px rgba(0, 0, 0, 0.5);
+}
 
-  .background {
-    transform: translateY(4vh)
-  }
-
-  .wrapper {
-    height: 80vh;
-  }
-
-  .social-links {
+#dragable #dragzone {
     width: 100%;
+    height: 100%;
+    cursor: move;
+    z-index: 10;
+    background-color: #0f2c65;
+}
+
+.wrapper{
+    position: relative;
+    width: 320px;
+    padding: 30px;
+    border-radius: 10px;
     display: flex;
-    justify-content: space-around;
-    padding-top: 150px;
-    padding-bottom: 10px;
-  }
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
 }
 
-
-
-
-
-.fa {
-  padding: 10px;
-  padding-left: 11px;
-  font-size: 30px;
-  width: 50px;
-  text-align: center;
-  text-decoration: none;
-  margin: 5px 2px;
-  border-radius: 50%;
-
+.wrapper .name{
+    font-size: 23px;
+    font-weight: 500;
+    color: white;
+    margin: 10px 0 5px 0;
 }
 
-.fa:hover {
-    opacity: 0.7;
+.wrapper .about{
+    color: #d0d1d7;
+    font-weight: 400;
+    font-size: 16px;
 }
 
-.fa-twitter {
-  background: #55ACEE;
-  color: white;
+/* DELETE ME - This is just temporary to test using multiple draggable divs. */
+
+#dragable1 {
+    width: 21rem;
+    height: 21rem;
+    border: 0.2rem solid #0f2c65;
+    border-radius: 0.2rem;
+    position: absolute;
+    z-index: 9;
+    box-shadow: 2px 4px 18px rgba(0, 0, 0, 0.2);
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.fa-linkedin {
-  background: #007bb5;
-  color: white;
+#dragable1.drag {
+    border-color: yellow;
+    box-shadow: 3px 6px 24px rgba(0, 0, 0, 0.5);
 }
 
-.fa-youtube {
-  background: #bb0000;
-  color: white;
+#dragable1 #dragzone1 {
+    width: 100%;
+    height: 100%;
+    cursor: move;
+    z-index: 10;
+    background-color: #0f2c65;
 }
 
-.fa-instagram {
-  background: #125688;
-  color: white;
+#dragable2 {
+    width: 21rem;
+    height: 21rem;
+    border: 0.2rem solid #0f2c65;
+    border-radius: 0.2rem;
+    position: absolute;
+    z-index: 9;
+    box-shadow: 2px 4px 18px rgba(0, 0, 0, 0.2);
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.fa-snapchat-ghost {
-  background: #fffc00;
-  color: white;
-  text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
+#dragable2.drag {
+    border-color: green;
+    box-shadow: 3px 6px 24px rgba(0, 0, 0, 0.5);
 }
 
-
-.social-links {
-  width: 100%;
-  display: flex;
-  justify-content: space-around;
-  padding-bottom: 25px;
+#dragable2 #dragzone2 {
+    width: 100%;
+    height: 100%;
+    cursor: move;
+    z-index: 10;
+    background-color: #0f2c65;
 }
