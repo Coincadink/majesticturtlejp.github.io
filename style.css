@@ -380,7 +380,9 @@ body{
     text-rendering:optimizeLegibility;
     visibility:visible;
     overflow-x:hidden;
-    transition:background-color .5s ease-in-out
+    transition:background-color .5s ease-in-out;
+
+    /* background-image: url("Wide Portrait.png"); */
 }
 ol,ul{
     list-style:none
