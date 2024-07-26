@@ -1,81 +1,130 @@
-const dragElement = (element, dragzone) => 
-{
-    let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+window.onresize = function(){ location.reload(); }
+const width = window.innerWidth * 0.8;
+const height = window.innerHeight * 0.8;
 
-    // Activated on mouse release.
+const marginTop = 40;
+const marginRight = 60;
+const marginBottom = 60;
+const marginLeft = 60;
 
-    const dragMouseUp = () => 
-    {
-        document.onmouseup = null;
-        document.onmousemove = null;
+const yaxisMargin = 0.2;
 
-        element.classList.remove("drag");
-    };
+const tooltipMarginTop = 0;
+const tooltipMarginLeft = 20;
+const tooltipColor = "black";
 
-    // Ran every frame that a div is being dragged.
+const pointSize = 4;
 
-    const dragMouseMove = (event) => 
-    {
-        event.preventDefault();
+// ----- CONSTANTS ----- //
 
-        pos1 = pos3 - event.clientX;
-        pos2 = pos4 - event.clientY;
-        pos3 = event.clientX;
-        pos4 = event.clientY;
+const corps = [
+    "Bluecoats",
+    "Blue-Devils",
+    "Boston-Crusaders",
+];
 
-        element.style.top = `${element.offsetTop - pos2}px`;
-        element.style.left = `${element.offsetLeft - pos1}px`;
-    };
+const colors = [
+    "red",
+    "green",
+    "blue"
+]
 
-    // Activated when the dragzone is clicked.
+// ----- HELPER TOOLS ----- //
 
-    const dragMouseDown = (event) => 
-    {
-        event.preventDefault();
+const parseTime = d3.timeParse("%Y-%m-%d");
 
-        pos3 = event.clientX;
-        pos4 = event.clientY;
+// ----- CHART FEATURES ----- //
 
-        // This can be used to add custom styling on drag.
-        element.classList.add("drag");
+// Select the svg container.
+svg = d3.select("svg")
+    .attr("width", width)
+    .attr("height", height);
 
-        document.onmouseup = dragMouseUp;
-        document.onmousemove = dragMouseMove;
-    };
+// - tooltip -- //
+const tooltip = svg.append("text")
+    .attr("class", "tooltip")
+    .attr("x", marginLeft + tooltipMarginLeft)
+    .attr("y", marginTop + tooltipMarginTop)
+    .attr("dy", 0)
+    .attr("fill", tooltipColor)
+    .selectAll("tspan")
+    .data(["", "", ""])
+        .join("tspan")
+        .text(d => `${d}`)
+        .attr("dy", "1.0em")
+        .attr("x", marginLeft + tooltipMarginLeft)
 
-    dragzone.onmousedown = dragMouseDown;
-};
+function tooltipCallback(evt, d, corp) {
+    tooltip
+        .data([corp, d.show, parseFloat(d.score).toFixed(3)])
+            .join(
+                enter => enter.append("tspan").text(d => `${d}`),
+                update => update.text(d => `${d}`),
+                exit => exit.remove()
+            )
+}
 
-// Fetch the draggable div and perform the dragElement function on it to give it dragging capabilities.
+// - x axis - //
 
-draggables = document.getElementsByClassName("draggable"),
-dragzones = document.getElementsByClassName("dragzone");
-for (let i = 0; i < draggables.length; i++) { dragElement(draggables[i], dragzones[i]); }
+const xScale = d3.scaleTime()
+    .domain([parseTime("2024-06-26"), parseTime("2024-07-20")])
+    .range([marginLeft, width - marginRight])
 
-// Add a new randomized node when the spacebar is depressed.
+const xAxis = d3.axisBottom(xScale)
+    .ticks(12)
+    .tickFormat(d3.timeFormat('%b, %d'))
 
-let playground = document.getElementById("draggable-playground");
+svg.append("g")
+    .attr("transform", `translate(0,${height - marginBottom})`)
+    .call(xAxis)
 
-document.body.onkeydown = function(e) 
-{
-    if (e.code == "Backspace") 
-    {
-        playground.removeChild(playground.lastChild);
+// - y axis - //
+
+const yScale = d3.scaleLinear()
+    .domain([70, 95])
+    .range([height - marginBottom, marginTop]);
+
+const yAxis = d3.axisLeft(yScale)
+    .ticks(4)
+
+svg.append("g")
+    .attr("transform", `translate(${marginLeft},0)`)
+    .call(yAxis);
+
+// ----- DATA FEATURES ----- //
+
+// Import data and plot points for each set.
+Promise.all(corps.map(corp => d3.csv(`data/${corp}.csv`))).then( 
+    data => {
+        // Pair corps with scores data.
+        const paired = data.map((d, idx) => [corps[idx], d, colors[idx]]);
+        paired.forEach(corp => plotCorp(corp))
     }
+);
 
-    else if (e.code == "Space") 
-    {
-        // TODO - There simply has to be a cleaner solution to this?
-        
-        // Generate new node.
-        var newNode = document.createElement('div');
-        newNode.className = "draggable";
-        newNode.innerHTML = '<header class="dragzone">\n<div class="wrapper">\n<div class="name">Portfolio</div>\n<div class="about">No... seriously man.</div>\n</div>\n</header>';
-        
-        // Inject the new node into the environment.
-        playground.appendChild(newNode);
+function plotCorp(data) {
 
-        // Enable the new node to be dragged.
-        dragElement(newNode, newNode.firstChild);
-    }
+    svg.append("path")
+        .attr("fill", "none")
+        .attr("stroke", data[2])
+        .attr("stroke-width", 1.5)
+        .datum(data[1])
+        .attr("d", d3.line()
+            .x(d => xScale(parseTime(d.date)))
+            .y(d => yScale(d.score))
+        )
+
+    svg.append("g")
+        .attr("id", `${data[0]}`)
+        .selectAll("circle")
+        .data(data[1])
+        .join("circle")
+            .attr("cx", d => xScale(parseTime(d.date)))
+            .attr("cy", d => yScale(d.score))
+            .attr("r", pointSize)
+            .attr("fill", data[2])
+
+        .on("mouseover mousedrag", (evt, d) => { tooltipCallback(evt, d, data[0]); })
+        .on("mouseout", () => { tooltip.text(""); });
+
 }
