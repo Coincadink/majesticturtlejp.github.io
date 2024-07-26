@@ -10,9 +10,14 @@
     <link rel="stylesheet" href="style.css">
     
     <script src="https://d3js.org/d3.v6.min.js" defer></script>
-    <script src="script.js" defer></script>
+    <script src="script.js" type = "module"defer></script>
 </head>
 <body>
-    <svg></svg>
+    <div class="wrapper">
+        <div class="container">
+            <svg id="plot"></svg>
+            <svg id="legend"></svg>
+        </div>
+    </div>
 </body>
 </html>
