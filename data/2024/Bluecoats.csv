@@ -1,11 +1,12 @@
-date,show,score
-2024-07-02,Summer Music Games In Cincinnati,78.75
-2024-07-06,The Whitewater Classic,81.9
-2024-07-07,River City Rhapsody,83.4
-2024-07-13,Midwest Classic,87.05
-2024-07-14,Celebration In Brass,88.35
-2024-07-16,DCI Broken Arrow,89.15
-2024-07-18,DCI Denton,90.5
-2024-07-19,DCI Houston,92.1
-2024-07-20,DCI Southwestern Championship,93.025
-2024-07-26,The Masters Of The Summer Music Games,94.45
+date,show,score,music,visual,ge,perc,brass,guard
+2024-07-02,Summer Music Games In Cincinnati,78.75,23.25,23.3,32.2,15.6,15.3,15.7
+2024-07-06,The Whitewater Classic,81.9,24.4,24.5,33.0,16.5,15.9,16.5
+2024-07-07,River City Rhapsody,83.4,24.8,24.7,33.9,16.6,16.5,16.5
+2024-07-13,Midwest Classic,87.05,26.4,26.15,34.5,17.5,17.8,17.7
+2024-07-14,Celebration In Brass,88.35,26.5,26.55,35.3,17.9,17.1,17.8
+2024-07-16,DCI Broken Arrow,89.15,26.6,26.65,35.9,17.3,18.1,17.1
+2024-07-18,DCI Denton,90.5,27.25,26.65,36.6,18.2,18.3,17.7
+2024-07-19,DCI Houston,92.1,27.6,27.4,37.1,18.4,18.6,17.9
+2024-07-20,DCI Southwestern Championship,93.025,28.175,27.6,37.25,18.8,18.6,18.1
+2024-07-26,The Masters Of The Summer Music Games,94.45,28.25,28.2,38.0,18.6,19.0,18.6
+2024-07-27,DCI Southeastern Championship,94.425,28.225,28.2,38.0,18.8,18.5,18.6

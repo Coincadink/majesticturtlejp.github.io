@@ -1,12 +1,13 @@
-date,show,score
-2024-06-26,Midwest Premiere,73.0
-2024-06-28,DCI Central Indiana,74.7
-2024-06-30,Cavalcade Of Brass,76.6
-2024-07-02,Summer Music Games In Cincinnati,78.45
-2024-07-09,Drums Across America,84.9
-2024-07-11,DCI Northern Alabama,86.05
-2024-07-13,DCI Little Rock,86.15
-2024-07-16,DCI Broken Arrow,88.25
-2024-07-18,DCI Denton,89.65
-2024-07-20,DCI Southwestern Championship,91.85
-2024-07-26,The Masters Of The Summer Music Games,93.35
+date,show,score,music,visual,ge,perc,brass,guard
+2024-06-26,Midwest Premiere,73.0,21.55,21.65,29.8,14.1,14.3,14.5
+2024-06-28,DCI Central Indiana,74.7,22.3,22.4,30.0,15.0,14.8,14.9
+2024-06-30,Cavalcade Of Brass,76.6,22.7,23.0,30.9,15.7,14.7,15.6
+2024-07-02,Summer Music Games In Cincinnati,78.45,23.25,23.4,31.8,15.7,15.4,15.8
+2024-07-09,Drums Across America,84.9,25.55,25.35,34.0,17.0,16.5,17.1
+2024-07-11,DCI Northern Alabama,86.05,25.7,25.65,34.7,16.9,17.0,17.4
+2024-07-13,DCI Little Rock,86.15,25.85,26.0,34.3,17.7,17.2,17.5
+2024-07-16,DCI Broken Arrow,88.25,26.35,26.5,35.4,17.7,17.9,17.6
+2024-07-18,DCI Denton,89.65,27.1,26.45,36.1,18.5,17.9,18.1
+2024-07-20,DCI Southwestern Championship,91.85,27.975,27.3,36.575,19.0,18.3,18.6
+2024-07-26,The Masters Of The Summer Music Games,93.35,27.8,28.05,37.5,18.7,18.5,19.0
+2024-07-27,DCI Southeastern Championship,93.875,28.15,28.2,37.525,19.1,18.3,19.2

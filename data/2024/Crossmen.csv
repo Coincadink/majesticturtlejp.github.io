@@ -1,10 +1,11 @@
-date,show,score
-2024-07-08,Drums Across The Smokies,74.65
-2024-07-09,Drums Across America,76.0
-2024-07-11,DCI Northern Alabama,76.7
-2024-07-13,DCI Little Rock,77.2
-2024-07-16,DCI Abilene,77.6
-2024-07-18,DCI Denton,78.05
-2024-07-20,DCI Southwestern Championship,79.925
-2024-07-22,DCI Mesquite,80.8
-2024-07-26,DCI Birmingham,80.7
+date,show,score,music,visual,ge,perc,brass,guard
+2024-07-08,Drums Across The Smokies,74.65,22.45,22.0,30.2,15.5,14.7,14.5
+2024-07-09,Drums Across America,76.0,22.75,22.35,30.9,16.1,14.7,14.7
+2024-07-11,DCI Northern Alabama,76.7,22.75,22.65,31.3,15.3,14.7,15.0
+2024-07-13,DCI Little Rock,77.2,23.15,22.95,31.1,16.5,14.6,15.1
+2024-07-16,DCI Abilene,77.6,23.5,23.3,30.8,15.8,15.8,15.4
+2024-07-18,DCI Denton,78.05,22.85,23.5,31.7,15.1,15.5,15.2
+2024-07-20,DCI Southwestern Championship,79.925,23.5,24.2,32.225,15.5,15.5,16.0
+2024-07-22,DCI Mesquite,80.8,23.45,24.75,32.6,15.2,15.4,16.3
+2024-07-26,DCI Birmingham,80.7,23.75,24.35,32.6,15.3,15.9,16.0
+2024-07-27,DCI Southeastern Championship,81.725,24.825,24.3,32.6,16.6,16.4,15.8
