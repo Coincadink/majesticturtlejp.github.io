@@ -1,31 +1,49 @@
 const corps = [
     "Bluecoats",
-    "Blue-Devils",
-    "Boston-Crusaders",
-    "Carolina-Crown",
-    "Phantom-Regiment",
-    "Santa-Clara-Vanguard",
+    "Boston Crusaders",
+    "Blue Devils",
+    "Phantom Regiment",
+    "Carolina Crown",
+    "Santa Clara Vanguard",
     "Mandarins",
-    "Blue-Stars",
-    "The-Cavaliers",
+    "Blue Stars",
     "Colts",
+    "The Cavaliers",
     "Troopers",
-    "Blue-Knights"
+    "Blue Knights",
+    "Madison Scouts",
+    "Spirit of Atlanta",
+    "Crossmen",
+    "Pacific Crest",
+    "Music City",
+    "The Academy",
+    "Genesis",
+    "Jersey Surf",
+    "Seattle Cascades"
 ];
 
 const colors = [
-    "#8dd3c7",  
-    "#fb8072",
-    "#bebada", 
-    "#ffed6f",
-    "#fccde5",
-    "#80b1d3", 
-    "#fdb462", 
-    "#b3de69", 
-    "#fddfb3", 
-    "#d9d9d9", 
-    "#bc80bd", 
-    "#ccebc5", 
+    '#e6194B', 
+    '#3cb44b', 
+    '#ffe119', 
+    '#4363d8', 
+    '#f58231', 
+    '#911eb4', 
+    '#42d4f4', 
+    '#f032e6', 
+    '#bfef45', 
+    '#fabed4', 
+    '#469990', 
+    '#dcbeff', 
+    '#9A6324', 
+    '#808000', 
+    '#ffd8b1', 
+    '#000075', 
+    '#a9a9a9', 
+    '#000000',
+    '#e6194B', 
+    '#3cb44b', 
+    '#ffe119', 
 ]
 
 window.onresize = function(){ location.reload(); }
@@ -34,6 +52,7 @@ const _plot = d3.select("#plot");
 const _legend = d3.select("#legend");
 
 var xScale = null;
+var maxDate = null;
 var yScale = null;
 var tooltip = null;
 
@@ -140,6 +159,8 @@ function plot(data) {
     dates = data.map(([_, shows]) => shows.map(show => show.date));
     scores = data.map(([_, shows]) => shows.map(show => show.score));
     
+    maxDate = d3.max(dates.flat())
+
     setXAxis(dates.flat());
     setYAxis(scores.flat());
 
@@ -154,6 +175,14 @@ function legend(data) {
 
     const final = data.map(subdata => subdata[1][subdata[1].length - 1].score);
     const corps = data.map(subdata => subdata[0]);
+
+    for (var i = 0; i < final.length - 1; i++) {
+        if(final[i] - final[i+1] < 1) {
+            const avg = (final[i] + final[i+1]) / 2
+            final[i] = avg + 0.5
+            final[i+1] = avg - 0.5
+        }
+    }
 
     for (var i = 0; i < final.length - 1; i++) {
         if(final[i] - final[i+1] < 1) {
@@ -187,7 +216,7 @@ function legend(data) {
 
 
 
-Promise.all(corps.map(corp => d3.csv(`data/${corp}.csv`))).then( 
+Promise.all(corps.map(corp => d3.csv(`data/2024/${corp}.csv`))).then( 
     data => {
         data.map((corp) => {
             corp.map((score) => {
