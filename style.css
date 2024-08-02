@@ -1,4 +1,4 @@
-/* ----- MODERN CSS RESET ----- */
+/* ------------------------- MODERN CSS RESET ------------------------- */
 
 /* 1. Use a more-intuitive box-sizing model. */
 *, *::before, *::after {
@@ -37,31 +37,57 @@ p, h1, h2, h3, h4, h5, h6 {
     isolation: isolate;
 }
 
-/* ----- MY CSS ----- */
+/* ------------------------- MY CSS ------------------------- */
 
-.wrapper {
+#wrapper {
     height: 100vh;
     width: 100vw;
+
+    /* background-color: #323437; */
 
     display: flex;
     justify-content: center;
     align-items: center;
+
+    user-select: none;
 }
 
-.container {
+#container {
     height: 80vh;
     width: 80vw;
 
     display: flex;
+    flex-direction: column;
     justify-content: center;
 }
 
 #plot {
     flex: 1 0;
-    /* border: 1px dashed #00c3ff; */
+    /* border: 1px dashed black; */
 }
 
 #legend {
-    width: 120px;
-    /* border: 1px dashed #e0460e; */
+    height: 10vh;
+    /* border: 1px dashed black; */
+}
+
+.division {
+    vertical-align: bottom;
+    font-family: Arial;
+    font-variant: small-caps;
+
+    text-anchor: middle;
+    dominant-baseline: central; /* This works :) */
+    
+    cursor: default;
+}
+
+.corps {
+    vertical-align: bottom;
+    font-family: Arial;
+    font-variant: small-caps;
+
+    text-anchor: middle;
+    
+    cursor: default;
 }
