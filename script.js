@@ -52,7 +52,7 @@ function updateXAxis(domain, ticks) {
 };
 
 // y Axis.
-
+ow to 
 var yScale = null;
 var yAxis = null;
 var yAx = null;
@@ -238,7 +238,7 @@ d3.dsv("|", "./data/scores.csv", parse).then(
         const corpsList = WORLD_CLASS.concat(OPEN_CLASS);
         
         // Map corps to their data.
-        const db = corpsList.map(corp => ({ "name": corp,  "scores": getCorp(data, corp, 2024, "Total") }));
+        const db = corpsList.map(corp => ({ "name": corp,  "scores": getCorp(data, corp, 2024, "Music - Brass") }));
 
         totaldb = db; //TODO: GET RID OF ME
 
