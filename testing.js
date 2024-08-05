@@ -37,7 +37,7 @@ const margin = {
     "T": 20,
     "B": 30,
     "R": 20,
-    "L": 30,
+    "L": 200,
 };
 
 function getCorp(data, corp, year) {
@@ -68,7 +68,7 @@ function getCorp(data, corp, year) {
     )
     results.sort((a, b) => a.Date - b.Date);
     return {
-        "Corp": corp.replace(" ", "-"),
+        "Corp": corp.replaceAll(" ", "-"),
         "Scores": results
     }
 };
@@ -186,7 +186,7 @@ function plot(data, db) {
                             .raise()
 
                         d3.select("#corp")
-                            .text(corp.Corp.replace("-", " "));
+                            .text(corp.Corp.replaceAll("-", " "));
                         d3.select("#score")
                             .text(`${caption}: ${d.Score}`);
 
@@ -240,38 +240,110 @@ function remove(db, corp) {
             .attr("stroke-width", 0)
             .remove();
 
-    return db.filter(d => d.Corp !== corp.replace(" ", "-"));
+    return db.filter(d => d.Corp !== corp.replaceAll(" ", "-"));
 };
+
+// List of corps.
+
+const WORLD_CLASS = [
+    "WORLD CLASS",
+    "Blue Devils",
+    "Blue Knights",
+    "Blue Stars",
+    "Bluecoats",
+    "Boston Crusaders",
+    "Carolina Crown",
+    "Colts",
+    "Crossmen",
+    "Genesis",
+    "Jersey Surf",
+    "Madison Scouts",
+    "Mandarins",
+    "Music City",
+    "Pacific Crest",
+    "Phantom Regiment",
+    "Santa Clara Vanguard",
+    "Seattle Cascades",
+    "Spirit of Atlanta",
+    "The Academy",
+    "The Cavaliers",
+    "Troopers",
+];
+
+const OPEN_CLASS = [
+    "OPEN CLASS",
+    // "7th Regiment",
+    "Blue Devils B",
+    "Blue Devils C",
+    "Colt Cadets",
+    "Columbians",
+    "Gold",
+    "Golden Empire",
+    "Guardians",
+    "Impulse",
+    "Les Stentors",
+    "Raiders",
+    "River City Rhythm",
+    "Spartans",
+    "The Battalion",
+    "Vessel",
+];
 
 d3.dsv("|", "./data/scores.csv", parse).then(
     (data) => {
 
         db = [];
-        add(data, db, "Bluecoats");
-        add(data, db, "Boston Crusaders");
-        add(data, db, "Blue Stars");
+        // add(data, db, "Bluecoats");
+        // add(data, db, "Boston Crusaders");
+        // add(data, db, "Blue Stars");
 
         plot(data, db);
 
-        svg.append("rect")
-            .attr("width", 10)
-            .attr("height", 10)
-            .attr("x", 10)
-            .attr("y", 10)
-            .on("click", function() {
-                add(data, db, "The Battalion")
-                plot(data, db);
-            });
+        // svg.append("rect")
+        //     .attr("width", 10)
+        //     .attr("height", 10)
+        //     .attr("x", 10)
+        //     .attr("y", 10)
+        //     .on("click", function() {
+        //         add(data, db, "The Battalion")
+        //         plot(data, db);
+        //     });
 
-        svg.append("rect")
-            .attr("width", 10)
-            .attr("height", 10)
-            .attr("x", 30)
-            .attr("y", 10)
-            .on("click", function() {
-                db = remove(db, "Bluecoats");
-                plot(data, db);
-            });
+        // svg.append("rect")
+        //     .attr("width", 10)
+        //     .attr("height", 10)
+        //     .attr("x", 30)
+        //     .attr("y", 10)
+        //     .on("click", function() {
+        //         db = remove(db, "Bluecoats");
+        //         plot(data, db);
+        //     });
 
+        // ----- LEGEND ----- //
+        
+        let legend = svg.append("text")
+            .attr("y", margin.T)
+
+        legend
+            .selectAll("tspan")
+            .data(WORLD_CLASS.concat(OPEN_CLASS))
+            .join("tspan")
+                .attr("class", "legend")
+                .text(d => d)
+                .attr("x", 0)
+                .attr("dy", "1.0em")
+                .on("click",
+                    (evt, d) => {
+                        if (db.map(c => c.Corp).includes(d.replaceAll(" ", "-"))) {
+                            d3.select(evt.target).attr("fill", "black")
+                            db = remove(db, d.replaceAll(" ", "-"));
+                            plot(data, db);
+                        } else {
+                            d3.select(evt.target).attr("fill", "blue")
+                            add(data, db, d);
+                            plot(data, db);
+                        }
+                    }
+                );
     }
 );
