@@ -1,8 +1,37 @@
 window.onresize = () => { location.reload(); };
 
-const svg = d3.select("#test");
+const svg = d3.select("#plot");
 const width = parseFloat(svg.style("width"));
 const height = parseFloat(svg.style("height"));
+
+// const caption = "Total"
+// const caption = "Music - Brass"
+// const caption = "Music - Percussion"
+let caption = "Total"
+
+// ----- TOOLTIP ----- //
+
+ttWidth = 20;
+ttHeight = 40;
+
+let tooltip = svg
+    .append("g")
+        .attr("id", "tooltip");
+
+tooltip
+    .append("rect")
+        .attr("id", "tooltip-back")
+        .attr("rx", 10);
+
+textIDs = ["corp", "score"]
+tooltip.append("text")
+    .attr("id", "tooltip-text")
+    .selectAll("tspan")
+    .data(textIDs)    
+    .enter().append("tspan")
+        .attr("id", d => d)
+        .attr("dy", "1.0em")
+        .attr("x", 0)
 
 const margin = {
     "T": 20,
@@ -11,7 +40,7 @@ const margin = {
     "L": 30,
 };
 
-function getCorp(data, corp, year, caption) {
+function getCorp(data, corp, year) {
     results = []
     data.map(
         (show) => {
@@ -42,7 +71,7 @@ function getCorp(data, corp, year, caption) {
         "Corp": corp.replace(" ", "-"),
         "Scores": results
     }
-}
+};
 
 function parse(d) {
     return {
@@ -66,10 +95,9 @@ function plot(data, db) {
         .domain(d3.extent(scores))
         .range([height - margin.B, margin.T]);
 
-    const xAxis = d3.axisBottom(xScale)
-        .tickFormat(d3.timeFormat('%b, %d'));
-    const yAxis = d3.axisLeft(yScale)
-        .ticks(20);
+    const xAxis = d3.axisBottom(xScale.nice())
+        .tickFormat(d3.timeFormat('%b, %d'))
+    const yAxis = d3.axisLeft(yScale.nice())
 
     svg.select(".x-axis")
         .transition()
@@ -120,6 +148,9 @@ function plot(data, db) {
                     .attr("stroke", d => color(corp.Corp))
                     .attr("stroke-width", 0)
                     .style("fill", "none")
+
+                .transition()
+                .duration(500)
                 .transition()
                 .duration(1000)
                     .attr("stroke-width", 4)
@@ -145,8 +176,41 @@ function plot(data, db) {
                     .attr("r", 0)
                     .attr("fill", d => color(corp.Corp))
                     .attr("stroke", "white")
+
+                .on("mouseover",
+                    (evt, d) => {
+                        let trgt = d3.select(evt.target);
+                                        
+                        tooltip
+                            .attr("display", "inline")
+                            .raise()
+
+                        d3.select("#corp")
+                            .text(corp.Corp.replace("-", " "));
+                        d3.select("#score")
+                            .text(`${caption}: ${d.Score}`);
+
+                        let bbox = d3.select("#tooltip-text").node().getBBox();
+
+                        d3.select("#tooltip-back")
+                            .attr("width", bbox.width+20)
+                            .attr("height", bbox.height+10)
+                            .attr("transform", `translate(${bbox.x-10}, ${bbox.y-5})`)
+
+                        tooltip
+                            .attr("transform", `translate(${trgt.attr("cx") - 20}, ${trgt.attr("cy") - bbox.height/2})`)
+
+                    }
+                )
+                .on("mouseout",
+                    (evt, d) => {
+                        tooltip
+                            .attr("display", "none");
+                    }
+                )
+
                 .transition()
-                .duration(1000)
+                .duration(500)
                     .attr("r", 5);
 
             // Update Circles.
@@ -160,12 +224,16 @@ function plot(data, db) {
     )
 }
 
+function add(data, db, corp) {
+    db.push(getCorp(data, corp, 2024))
+};
+
 function remove(db, corp) {
     svg.selectAll(`.${corp}-point`) //TODO: Incoorporate into main plot loop callbacks?
         .transition()
         .duration(1000)
             .attr("r", 0)
-            .remove();
+            .remove();``
     svg.selectAll(`.${corp}-path`) //TODO: Incoorporate into main plot loop callbacks?
         .transition()
         .duration(1000)
@@ -173,19 +241,15 @@ function remove(db, corp) {
             .remove();
 
     return db.filter(d => d.Corp !== corp.replace(" ", "-"));
-}
-
-function add(data, db, corp) {
-    db.push(getCorp(data, corp, 2024, "Total"))
-}
+};
 
 d3.dsv("|", "./data/scores.csv", parse).then(
     (data) => {
 
-        db = []
-        add(data, db, "Bluecoats")
-        add(data, db, "Boston Crusaders")
-        add(data, db, "Colts")
+        db = [];
+        add(data, db, "Bluecoats");
+        add(data, db, "Boston Crusaders");
+        add(data, db, "Blue Stars");
 
         plot(data, db);
 
@@ -195,9 +259,9 @@ d3.dsv("|", "./data/scores.csv", parse).then(
             .attr("x", 10)
             .attr("y", 10)
             .on("click", function() {
-                add(data, db, "Seattle Cascades")
+                add(data, db, "The Battalion")
                 plot(data, db);
-            })
+            });
 
         svg.append("rect")
             .attr("width", 10)
@@ -205,9 +269,9 @@ d3.dsv("|", "./data/scores.csv", parse).then(
             .attr("x", 30)
             .attr("y", 10)
             .on("click", function() {
-                db = remove(db, "Bluecoats")
+                db = remove(db, "Bluecoats");
                 plot(data, db);
-            })
+            });
 
     }
-)
+);

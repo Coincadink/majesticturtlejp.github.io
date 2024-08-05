@@ -92,6 +92,19 @@ p, h1, h2, h3, h4, h5, h6 {
     cursor: default;
 }
 
-#test {
-    flex: 1 0;
+#tooltip-back {
+    fill: black;
+    opacity: 0.6;
+}
+
+#notch {
+    opacity: 0.6;   
+}
+
+#tooltip {
+    fill: white;
+    font-family: Arial;
+    font-variant: small-caps;
+    
+    text-anchor: end;
 }
