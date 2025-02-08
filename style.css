@@ -128,43 +128,67 @@ h1 {
 /* ------------------------- CAROUSEL ------------------------- */
 
 .carousel {
-  
-    top: 50%;
-    height: 60vh;
-    width: 300px;
-    overflow-y: scroll;
-    scroll-behavior: smooth;
-    transition: all 0.3s ease;
-    z-index: 1000;
+  height: 60%;
+  width: 300px;
+  overflow-y: scroll;
+  scroll-behavior: smooth;
 }
 
 .carousel-content {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 2rem;
 }
 
 .carousel-item {
-    background: rgba(255, 255, 255, 0.9);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    padding: 2rem;
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease;
-    min-height: 200px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2rem;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
 }
 
 /* Hide scrollbar */
 .carousel::-webkit-scrollbar {
-    display: none;
+  display: none;
 }
 
 .carousel {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ------------------------- MEDIA QUERY FOR SMALLER SCREENS ------------------------- */
+
+@media (max-width: 800px) {
+  .wrapper {
+    flex-direction: column;
+  }
+
+  .carousel {
+    height: auto; /* Adjust height to auto */
+    width: 80%;
+    overflow-x: scroll; /* Change to horizontal scrolling */
+    overflow-y: scroll; /* Hide vertical scrolling */
+    position: static; /* Remove absolute positioning */
+    margin-top: 2rem; /* Space between aboutme section and carousel */
+  }
+
+  .carousel-content {
+    flex-direction: row; /* Change flex direction to row */
+    gap: 1rem;
+    padding: 1rem; /* Reduce padding */
+  }
+
+  .carousel-item {
+    min-height: 150px;
+    width: 200px; /* Adjust width for horizontal layout */
+  }
 }
