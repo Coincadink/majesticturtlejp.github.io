@@ -28,7 +28,7 @@ ol[role='list'] {
 
 /* Set core body defaults */
 body {
-  min-height: 100vh;
+  min-height: 100dvh;
   line-height: 1.5;
 }
 
@@ -175,6 +175,29 @@ h1 {
   justify-content: center;
 }
 
+.description {
+  position: absolute;
+  top: 2rem;
+  left: 2rem;
+  right: 2rem;
+  bottom: 2rem;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.carousel-item:hover .description {
+  opacity: 1;
+}
+
 /* FOR WEB */
 @media (min-width: 800px) {
   .wrapper {
@@ -183,7 +206,7 @@ h1 {
 
   .carousel {
     width: 300px;
-    height: 70vh;
+    height: 70dvh;
 
     flex-direction: column;
     overflow-y: scroll;
