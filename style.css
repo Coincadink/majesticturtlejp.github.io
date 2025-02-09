@@ -120,6 +120,10 @@ body {
   opacity: 0.7;
 }
 
+.linkedin {
+  margin-left: 2.4px;
+}
+
 .linkedin:before {
   content: "\f0e1";
 }
