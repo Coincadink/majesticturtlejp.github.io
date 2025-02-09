@@ -79,7 +79,7 @@ textarea:not([rows]) {
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100&display=swap');
 
 body {
-  height: 100vh;
+  height: 100dvh;
   margin: 0px;
   padding: 0px;
   overflow: hidden;
@@ -169,6 +169,10 @@ h1 {
   border: 1px solid rgba(0, 0, 0, 0.1);
   padding: 2rem;
   border-radius: 10px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* FOR WEB */
