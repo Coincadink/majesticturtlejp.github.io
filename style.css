@@ -74,121 +74,148 @@ textarea:not([rows]) {
   scroll-margin-block: 5ex;
 }
 
-/* ------------------------- GENERAL ------------------------- */
+/* ------------------------- MY CSS ------------------------- */
 
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100&display=swap');
 
-* {
-    font-family: "Roboto", sans-serif;
-    font-weight: 100;
+body {
+  height: 100vh;
+  margin: 0px;
+  padding: 0px;
+  overflow: hidden;
 }
 
-body { 
-    height: 100vh;
-
-    overflow: hidden;
+* {
+  font-family: "Roboto", sans-serif;
+  font-weight: 100;
 }
 
 .wrapper {
-    height: 100%;
-
-    padding: 1em;
-
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.socials {
-    padding-left: 2.2px;
+.wrapper > * {
+  margin: 5px;
 }
 
-.fa {
-    padding: 0px 10px 20px 0px;
-    text-decoration: none;
-    color: black;
-    opacity: 0.7;
+/* --- ABOUT ME --- */
+
+/* Social media symbols from FontAwesome: https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css */
+@font-face {font-family: "FontAwesome"; src: url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/fonts/fontawesome-webfont.ttf?v=4.7.0") format("truetype"); font-weight: normal; font-style: normal;}
+
+.social {
+  display: inline-block;
+  font: normal normal normal 14px/1 FontAwesome;
+  font-size: inherit;
+  text-rendering: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  
+  padding: 0px 10px 20px 0px;
+  text-decoration: none;
+  color: black;
+  opacity: 0.7;
+}
+
+.linkedin:before {
+  content: "\f0e1";
+}
+
+.github:before {
+  content: "\f09b";
+}
+
+.email:before {
+  content: "\f0e0";
 }
 
 h1 {
-    margin-top: 0;
+  margin-top: 0px;
 }
 
 .passions {
-    list-style: none;
-    padding-left: 0;
+  list-style: none;
+  padding-left: 0;
 }
 
 .passions > li::before {
-    content: "> ";
-    padding-right: 0.5em;
-    opacity: 0.3;
+  content: ">";
+  padding-right: 0.5em;
+  opacity: 0.3;
 }
 
-/* ------------------------- CAROUSEL ------------------------- */
+/* --- CAROUSEL --- */
 
-.carousel {
-  height: 60%;
-  width: 300px;
-  overflow-y: scroll;
-  scroll-behavior: smooth;
-}
-
-.carousel-content {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  padding: 2rem;
-}
-
-.carousel-item {
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  padding: 2rem;
-  border-radius: 10px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease;
-  min-height: 200px;
+.carousel {  
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
-}
 
-/* Hide scrollbar */
-.carousel::-webkit-scrollbar {
-  display: none;
-}
-
-.carousel {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
 
-/* ------------------------- MEDIA QUERY FOR SMALLER SCREENS ------------------------- */
+.carousel::-webkit-scrollbar {
+  display: none;
+}
 
-@media (max-width: 800px) {
+.carousel-item {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  border-radius: 10px;
+}
+
+/* FOR WEB */
+@media (min-width: 800px) {
+  .wrapper {
+    flex-direction: row;
+  }
+
+  .carousel {
+    width: 300px;
+    height: 70vh;
+
+    flex-direction: column;
+    overflow-y: scroll;
+  }
+
+  .carousel-item {
+    width: 80%;
+    margin-top: 15px;
+  }
+}
+
+/* FOR MOBILE */
+@media (max-width: 799px) {
   .wrapper {
     flex-direction: column;
   }
 
   .carousel {
-    height: auto; /* Adjust height to auto */
     width: 80%;
-    overflow-x: scroll; /* Change to horizontal scrolling */
-    overflow-y: scroll; /* Hide vertical scrolling */
-    position: static; /* Remove absolute positioning */
-    margin-top: 2rem; /* Space between aboutme section and carousel */
-  }
+    height: 200px;
 
-  .carousel-content {
-    flex-direction: row; /* Change flex direction to row */
-    gap: 1rem;
-    padding: 1rem; /* Reduce padding */
+    flex-direction: row;
+    overflow-x: scroll;
   }
 
   .carousel-item {
-    min-height: 150px;
-    width: 200px; /* Adjust width for horizontal layout */
+    height: 100%;
+    flex-shrink: 0;
+    margin-right: 15px;
+  }
+
+  .carousel-item * {
+    height: 100%;
+    border-radius: 5px;
+  }
+}
+
+/* FOR MOBILE + TEXT WRAP */
+@media (max-width: 499px) {
+  .aboutme {
+    max-width: 360px;
   }
 }
