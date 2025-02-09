@@ -218,7 +218,7 @@ h1 {
   padding: 2rem;
   font-weight: 900;
   
-  background-color: lightpink;
+  background: linear-gradient(#e66465, #9198e5);
   background-size: 0% 100%, 100% 2px;
   background-position: 100% 100%, 0 100%;
   background-clip: text;
@@ -227,7 +227,7 @@ h1 {
   font-size: 1.4em;
   text-align: center;
   line-height: 1;
-  opacity: 0.3;
+  opacity: 0.8;
 
   transition: background-size 400ms ease, background-position 400ms ease, color 100ms ease, opacity 100ms ease;
 }
