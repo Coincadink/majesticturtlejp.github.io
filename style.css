@@ -28,7 +28,7 @@ ol[role='list'] {
 
 /* Set core body defaults */
 body {
-  min-height: 100vh;
+  min-height: 100dvh;
   line-height: 1.5;
 }
 
@@ -248,7 +248,7 @@ h1 {
 
   .carousel {
     width: 300px;
-    height: 70vh;
+    height: 70dvh;
 
     flex-direction: column;
     overflow-y: scroll;
