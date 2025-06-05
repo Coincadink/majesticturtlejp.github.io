@@ -1,0 +1,3 @@
+[submodule "dci"]
+	path = dci
+	url = https://github.com/Coincadink/dci-frontend.git
