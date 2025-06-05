@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Visualization</title>
+    <link rel="shortcut icon" href="#">
+
+    <link rel="stylesheet" href="./style.css">
+    
+    <script src="https://d3js.org/d3.v6.min.js" defer></script>
+    <script src="./script.js" defer></script>
+</head>
+<body>
+    <div id="container">
+        <h1>Drum Corps Score Visualization</h1>
+        
+        <div class="controls">
+            <label for="score-type">Score Type:</label>
+            <select id="score-type">
+                <option value="Total">Total</option>
+                <option value="Subtotal">Subtotal</option>
+                <option value="Penalties">Penalties</option>
+            </select>
+            
+            <label for="year-filter">Year:</label>
+            <select id="year-filter">
+                <option value="all">All Data</option>
+            </select>
+        </div>
+        
+        <svg id="plot"></svg>
+    </div>
+</body>
+</html>
