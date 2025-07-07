@@ -196,7 +196,7 @@ h1 {
 
 .carousel-item {
   border: 1px solid rgba(0, 0, 0, 0.1);
-  padding: 2rem;
+  padding: 1.5rem;
   border-radius: 10px;
 
   display: flex;
@@ -216,12 +216,13 @@ h1 {
   align-items: center;
 
   padding: 2rem;
-  font-weight: 900;
   
   background: linear-gradient(#e66465, #9198e5);
   background-size: 0% 100%, 100% 2px;
   background-position: 100% 100%, 0 100%;
   background-clip: text;
+
+  filter: drop-shadow(1px 1px 0px black);
 
   color: white;
   font-size: 1.4em;
