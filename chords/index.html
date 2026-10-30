@@ -1,0 +1,3415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>chords</title>
+<style>
+  :root{
+    --bg:#f4f2ee;
+    --ink:28,27,25;
+    --slotw:80px;
+    --fs:44px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{
+    background:var(--bg);
+    color:rgb(var(--ink));
+    font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    display:flex;align-items:center;justify-content:center;
+    overflow:hidden;
+    touch-action:none;
+    user-select:none;-webkit-user-select:none;
+  }
+
+  .app{
+    display:flex;align-items:center;justify-content:center;
+    gap:clamp(6px,1.6vw,26px);
+    width:calc(100% - var(--mode-reserve, 220px));
+    margin-left:0;
+  }
+
+  .mode-wheel{
+    position:fixed;
+    top:50%;
+    left:12px;
+    width:calc(var(--mode-radius, 100px) + 110px);
+    height:calc(var(--mode-radius, 100px) * 2);
+    transform:translateY(-50%);
+    z-index:30;
+    touch-action:none;
+    user-select:none;-webkit-user-select:none;
+    cursor:grab;
+  }
+  .mode-wheel.dragging{cursor:grabbing;}
+  .mode-arc{
+    position:absolute;
+    inset:0 auto 0 0;
+    width:var(--mode-radius, 100px);
+    height:100%;
+    overflow:visible;
+    pointer-events:none;
+  }
+  .mode-arc path{
+    fill:none;
+    stroke:rgba(var(--ink),.12);
+    stroke-width:1;
+  }
+  .mode-choice{
+    position:absolute;
+    width:100px;
+    min-height:28px;
+    padding:4px 5px;
+    transform:translate(-50%,-50%);
+    border:0;
+    border-radius:2px;
+    background:var(--bg);
+    color:rgb(var(--ink));
+    font:inherit;
+    font-size:clamp(10px,1.2vw,14px);
+    font-weight:300;
+    white-space:nowrap;
+    opacity:.42;
+    cursor:pointer;
+    touch-action:none;
+    -webkit-tap-highlight-color:transparent;
+    transition:transform .22s cubic-bezier(.2,.8,.3,1), opacity .2s ease, font-weight .2s ease;
+  }
+  .mode-choice:hover,.mode-choice:focus-visible{opacity:.82;}
+  .mode-choice:focus{outline:none;}
+  .mode-choice:focus-visible{outline:1px solid rgba(var(--ink),.35);}
+  .mode-choice.active{opacity:1;font-weight:450;}
+  .mode-choice.hidden-neighbor{
+    opacity:0;
+    pointer-events:none;
+    visibility:hidden;
+    transition:transform .22s cubic-bezier(.2,.8,.3,1), opacity .2s ease, visibility 0s linear .2s;
+  }
+
+  .arrow{
+    flex:0 0 auto;
+    background:none;border:0;
+    padding:.5em .35em;
+    font-family:inherit;
+    font-size:clamp(18px,2.4vw,26px);
+    font-weight:300;line-height:1;
+    color:rgb(var(--ink));
+    opacity:.13;
+    cursor:pointer;
+    transition:opacity .3s ease;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .arrow:hover{opacity:.45;}
+  .arrow:active{opacity:.7;}
+  .arrow:focus{outline:none;}
+  .arrow:focus-visible{opacity:.6;}
+
+  .notes{
+    position:relative;
+    flex:0 0 auto;
+    height:calc(var(--fs) * 2.2);
+    overflow:hidden;
+  }
+
+  .note{
+    position:absolute;top:0;left:0;
+    width:var(--slotw);height:100%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:var(--fs);
+    font-weight:300;
+    line-height:1;
+    letter-spacing:.005em;
+    color:rgba(var(--ink),.78);
+    cursor:pointer;
+    will-change:transform,opacity;
+    -webkit-tap-highlight-color:transparent;
+  }
+
+  /*
+    The inner element carries the accidental-dependent vertical shift
+    via a CSS custom property. Because the shift lives inside `transform`,
+    the CSS transition smoothly interpolates it whenever a note gains or
+    loses its accidental during a scale change.
+  */
+  .inner{
+    position:relative;
+    display:grid;
+    place-items:center;
+    width:100%;
+    transform: translateY(var(--shift, 0px));
+    transition:transform .3s cubic-bezier(.2,.8,.3,1), color .25s ease;
+  }
+  .note:hover .inner{color:rgba(var(--ink),1);}
+  .note.playing .inner{color:rgba(var(--ink),1);}
+  .note.pressed .inner{
+    transform: translateY(var(--shift, 0px)) scale(1.1);
+    color:rgba(var(--ink),1);
+  }
+
+  .label{
+    grid-area:1 / 1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    line-height:1;
+    white-space:nowrap;
+  }
+
+  .letterLine{
+    position:relative;
+    display:inline-block;
+    line-height:1;
+    white-space:nowrap;
+  }
+
+  .pc{display:inline-block;}
+
+  .acc{
+    position:absolute;
+    left:calc(100% + 1px);
+    top:0;
+    font-size:.5em;
+    line-height:1;
+    transform:translateY(.06em);
+    opacity:0;
+  }
+
+  .quality{
+    font-size:.22em;
+    font-weight:300;
+    letter-spacing:.02em;
+    opacity:.45;
+    margin-top:.16em;
+    line-height:1;
+    white-space:nowrap;
+  }
+
+  .vol{
+    position:fixed;
+    left:50%;
+    bottom:calc(14vh + env(safe-area-inset-bottom, 0px));
+    width:140px;height:14px;
+    transform:translateX(-50%);
+    opacity:.45;
+    transition:opacity .35s ease;
+    pointer-events:none;
+    z-index:5;
+  }
+  .vol.show{opacity:1;}
+  .vol-line{
+    position:absolute;left:0;right:0;top:50%;
+    height:1px;
+    background:rgba(var(--ink),.3);
+  }
+  .vol-thumb{
+    position:absolute;top:0;
+    width:5px;height:14px;
+    border-radius:1px;
+    background:rgba(var(--ink),.7);
+    transition:left .08s ease-out;
+  }
+  .playback-indicator{
+    position:fixed;
+    left:50%;
+    bottom:calc(14vh + env(safe-area-inset-bottom, 0px) + 24px);
+    transform:translateX(-50%);
+    color:rgba(var(--ink),.65);
+    font-size:16px;
+    line-height:1;
+    opacity:0;
+    pointer-events:none;
+    z-index:5;
+  }
+  .playback-indicator.show{animation:playback-indicator 900ms ease both;}
+  @keyframes playback-indicator{
+    0%{opacity:0;transform:translate(-50%,4px);}
+    18%,70%{opacity:.8;transform:translate(-50%,0);}
+    100%{opacity:0;transform:translate(-50%,-3px);}
+  }
+
+  .tline{
+    stroke:rgba(var(--ink),.28);
+    stroke-width:1;
+    stroke-linecap:round;
+    transition:stroke .15s ease, stroke-width .15s ease;
+  }
+  .tline.held{stroke:rgba(var(--ink),.8);stroke-width:1.4;}
+  .tline.on{stroke:rgba(var(--ink),.8);stroke-width:1.8;}
+  .tname{fill:rgb(var(--ink));font-weight:300;opacity:.5;transition:opacity .15s ease;}
+  .tname.on{opacity:1;}
+  .trom{fill:rgb(var(--ink));font-weight:300;opacity:.35;transition:opacity .15s ease;}
+  .trom.on{opacity:.7;}
+
+  .histbar{
+    position:fixed;
+    left:0;
+    right:0;
+    top:calc(50% + var(--fs) * 1.1 + 34px);
+    width:fit-content;
+    max-width:min(780px, calc(100vw - 32px));
+    margin-inline:auto;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:.55em;
+    font-size:clamp(11px, calc(var(--fs) * .32), 15px);
+    font-weight:300;
+    letter-spacing:.02em;
+    color:rgb(var(--ink));
+    z-index:20;
+  }
+  .histbar.idle-clearing .hist-item{
+    animation:none;
+    opacity:0;
+    transform:translateY(-8px) scale(.9);
+    transition:opacity .55s ease, transform .55s cubic-bezier(.2,.8,.3,1);
+  }
+
+  .hist{
+    width:fit-content;
+    max-width:100%;
+    min-width:min(220px, calc(100vw - 32px));
+    min-height:1.2em;
+    overflow:hidden;
+    display:flex;
+    justify-content:center;
+    cursor:text;
+    user-select:text;-webkit-user-select:text;
+  }
+  .hist:hover .hist-track{opacity:.82;}
+  .hist:focus-visible{outline:1px solid rgba(var(--ink),.4);outline-offset:4px;}
+  .hist.playing .hist-track{opacity:1;}
+  .hist-track{
+    display:block;
+    flex:0 0 auto;
+    white-space:nowrap;
+    will-change:transform;
+    transition:transform .32s cubic-bezier(.2,.8,.3,1);
+  }
+  .hist-item{
+    display:inline-block;
+  }
+  .hist-item.pop{
+    animation:hist-pop .28s cubic-bezier(.2,.8,.3,1) both;
+  }
+  .hist-item.later{margin-left:.65em;}
+  .hist-item.active{color:rgb(var(--ink));text-decoration:underline;text-underline-offset:.2em;}
+  .hist-caret{
+    display:inline-block;
+    width:0;
+    height:.95em;
+    margin-right:-1px;
+    border-left:1px solid rgba(var(--ink),.8);
+    vertical-align:-.12em;
+    pointer-events:none;
+  }
+  .hist.editing .hist-caret{animation:hist-caret-blink 1s steps(2, start) infinite;}
+  @keyframes hist-caret-blink{50%{opacity:0;}}
+  @keyframes hist-pop{
+    0%{opacity:0;transform:scale(.65);}
+    70%{opacity:1;transform:scale(1.08);}
+    100%{opacity:1;transform:scale(1);}
+  }
+  .hist-tools{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:.9em;
+    opacity:0;
+    transform:translateY(-3px);
+    pointer-events:none;
+    transition:opacity .2s ease, transform .2s ease;
+  }
+  .histbar:hover .hist-tools,
+  .histbar:focus-within .hist-tools,
+  .histbar.tools-open .hist-tools{
+    opacity:1;
+    transform:translateY(0);
+    pointer-events:auto;
+  }
+  .hist-tool{
+    border:0;
+    padding:.15em .1em;
+    background:none;
+    color:inherit;
+    font:inherit;
+    letter-spacing:inherit;
+    opacity:.5;
+    cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+    transition:opacity .2s ease;
+  }
+  .hist-tool:hover,.hist-tool:focus-visible{opacity:1;}
+  .hist-tool:focus{outline:none;}
+  .hist-tool:focus-visible{outline:1px solid rgba(var(--ink),.4);outline-offset:3px;}
+  .hist-export-wrap,.hist-copy-wrap{position:relative;display:flex;align-items:center;}
+  .hist-export-menu,.hist-copy-menu{
+    position:absolute;
+    top:calc(100% + .35em);
+    left:50%;
+    display:flex;
+    gap:.4em;
+    opacity:0;
+    transform:translate(-50%,-5px) scale(.94);
+    transform-origin:top center;
+    visibility:hidden;
+    pointer-events:none;
+    transition:opacity .18s ease, transform .18s cubic-bezier(.2,.8,.3,1), visibility 0s linear .18s;
+    z-index:9;
+  }
+  .hist-export-wrap.open .hist-export-menu,
+  .hist-copy-wrap.open .hist-copy-menu{
+    opacity:1;
+    transform:translate(-50%,0) scale(1);
+    visibility:visible;
+    pointer-events:auto;
+    transition-delay:0s;
+  }
+  .hist-export-option,.hist-copy-option{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:.15em;
+    min-width:3.2em;
+    padding:.35em .45em;
+    border:1px solid rgba(var(--ink),.14);
+    background:var(--bg);
+    color:inherit;
+    font:inherit;
+    font-size:.78em;
+    line-height:1;
+    cursor:pointer;
+    box-shadow:0 3px 12px rgba(var(--ink),.08);
+    -webkit-tap-highlight-color:transparent;
+  }
+  .hist-export-option:hover,.hist-export-option:focus-visible,
+  .hist-copy-option:hover,.hist-copy-option:focus-visible{border-color:rgba(var(--ink),.45);opacity:1;}
+  .hist-export-option:focus,.hist-copy-option:focus{outline:none;}
+  .hist-export-option:focus-visible,.hist-copy-option:focus-visible{outline:1px solid rgba(var(--ink),.5);outline-offset:2px;}
+  .hist-export-icon{width:1.35em;height:1.35em;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
+  .hist-popover{
+    position:fixed;
+    top:0;
+    left:50%;
+    width:min(520px, calc(100vw - 32px));
+    max-height:55vh;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    padding:.5em 0;
+    transform:translateX(-50%);
+    background:var(--bg);
+    border:1px solid rgba(var(--ink),.16);
+    box-shadow:0 6px 24px rgba(var(--ink),.08);
+    z-index:8;
+  }
+  .hist-popover[hidden]{display:none;}
+  .hist-entry{
+    padding:.55em .8em;
+    border-bottom:1px solid rgba(var(--ink),.08);
+  }
+  .hist-entry:last-child{border-bottom:0;}
+  .hist-entry-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:.8em;
+  }
+  .hist-entry-actions{display:flex;align-items:center;gap:.7em;}
+  .hist-entry-action{
+    border:0;
+    background:none;
+    color:inherit;
+    font:inherit;
+    opacity:.55;
+    cursor:pointer;
+    padding:.15em;
+  }
+  .hist-entry-action:hover,.hist-entry-action:focus-visible{opacity:1;}
+  .hist-entry-date{opacity:.5;font-size:.8em;}
+  .hist-entry-chords{
+    display:block;
+    width:100%;
+    margin-top:.25em;
+    padding:0;
+    border:0;
+    background:none;
+    color:inherit;
+    font:inherit;
+    text-align:left;
+    white-space:normal;
+    cursor:pointer;
+  }
+  .hist-clear-all{
+    display:block;
+    width:100%;
+    padding:.55em .8em;
+    border:0;
+    border-bottom:1px solid rgba(var(--ink),.12);
+    background:none;
+    color:inherit;
+    font:inherit;
+    text-align:left;
+    opacity:.6;
+    cursor:pointer;
+  }
+  .hist-clear-all:hover,.hist-clear-all:focus-visible{opacity:1;background:rgba(var(--ink),.06);}
+  .hist-clear-all:disabled{opacity:.35;cursor:default;background:none;}
+  .hist-section-title{padding:.55em .8em .25em;}
+  .hist-status{
+    position:absolute;
+    width:1px;height:1px;
+    padding:0;margin:-1px;
+    overflow:hidden;clip:rect(0,0,0,0);
+    white-space:nowrap;border:0;
+  }
+  .hist-status.visible{
+    position:absolute;
+    top:calc(100% + 3.2em);
+    left:50%;
+    width:max-content;
+    max-width:calc(100vw - 32px);
+    height:auto;
+    margin:0;
+    padding:.3em .6em;
+    overflow:visible;
+    clip:auto;
+    transform:translateX(-50%);
+    background:var(--bg);
+    border:1px solid rgba(var(--ink),.16);
+    color:rgb(var(--ink));
+    z-index:5;
+    pointer-events:none;
+  }
+  .hist-status.visible.error{color:#8f342b;}
+  @media (prefers-reduced-motion:reduce){
+    .hist-item.pop{animation-duration:.01ms;}
+    .hist.editing .hist-caret{animation:none;}
+    .hist-track,.hist-tools,.hist-export-menu,.hist-copy-menu{transition-duration:.01ms;}
+    .histbar.idle-clearing .hist-item{transition-duration:.01ms;}
+    .playback-indicator.show{animation-duration:.01ms;}
+  }
+
+  .blob{
+    position:fixed;
+    inset:0;
+    width:100%;
+    height:100%;
+    pointer-events:none;
+    z-index:10;
+  }
+  .blob-path{
+    fill:none;
+    stroke:rgba(var(--ink),.30);
+    stroke-width:1.2;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+    stroke-dasharray:4 9 2 8 6 7;
+  }
+  .blob-path.solid{
+    stroke:rgba(var(--ink),.55);
+    stroke-width:1.6;
+    stroke-dasharray:none;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <button class="arrow" id="prev" aria-label="Previous">&lt;</button>
+  <div class="notes" id="notes"></div>
+  <button class="arrow" id="next" aria-label="Next">&gt;</button>
+</div>
+
+<div class="mode-wheel" id="modeWheel" role="group" aria-label="Scale modes; drag up or down to change mode">
+  <svg class="mode-arc" id="modeArc" aria-hidden="true"><path id="modeArcPath"/></svg>
+</div>
+
+<div class="vol" id="vol" aria-hidden="true">
+  <div class="vol-line"></div>
+  <div class="vol-thumb" id="volThumb"></div>
+</div>
+<div class="playback-indicator" id="playbackIndicator" aria-hidden="true"></div>
+
+<div class="histbar" id="histBar">
+  <div class="hist" id="hist" role="textbox" aria-multiline="false" tabindex="0" aria-label="Chord progression editor. Click to place the cursor; use left and right arrows to move and Backspace to delete.">
+    <div class="hist-track" id="histTrack"></div>
+  </div>
+  <div class="hist-tools" role="toolbar" aria-label="Chord progression tools">
+    <button class="hist-tool" id="histClear" type="button" aria-label="Clear current progression">clear</button>
+    <span class="hist-copy-wrap" id="histCopyWrap">
+      <button class="hist-tool" id="histCopy" type="button" aria-label="Choose progression copy format" aria-expanded="false" aria-controls="histCopyMenu">copy</button>
+      <span class="hist-copy-menu" id="histCopyMenu" aria-label="Copy format">
+        <button class="hist-copy-option" id="histCopyKey" type="button" aria-label="Copy progression as chord names">key</button>
+        <button class="hist-copy-option" id="histCopyDegree" type="button" aria-label="Copy progression as scale degrees">degree</button>
+      </span>
+    </span>
+    <span class="hist-export-wrap" id="histExportWrap">
+      <button class="hist-tool" id="histExport" type="button" aria-label="Choose progression export format" aria-expanded="false" aria-controls="histExportMenu">export</button>
+      <span class="hist-export-menu" id="histExportMenu" aria-label="Export format">
+        <button class="hist-export-option" id="histExportMidi" type="button" aria-label="Export MIDI">
+          <svg class="hist-export-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M12 3v10.5a3 3 0 1 1-2-2.83V6l8-2v7.5a3 3 0 1 1-2-2.83V2z"/></svg>
+          <span>MIDI</span>
+        </button>
+        <button class="hist-export-option" id="histExportWav" type="button" aria-label="Export WAV audio">
+          <svg class="hist-export-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M2 10h2l2-5 3 10 3-10 2 10 2-5h2"/></svg>
+          <span>WAV</span>
+        </button>
+      </span>
+    </span>
+    <button class="hist-tool" id="histSave" type="button" aria-label="Save current progression">save</button>
+    <button class="hist-tool" id="histArchive" type="button" aria-expanded="false" aria-controls="histPopover">history</button>
+    <button class="hist-tool" id="histPlay" type="button" aria-label="Play current progression">play</button>
+    <button class="hist-tool" id="histEntryMode" type="button" aria-label="Switch to hover-to-play entry mode" aria-pressed="true">entry: click</button>
+  </div>
+  <div class="hist-popover" id="histPopover" hidden></div>
+  <div class="hist-status" id="histStatus" role="status" aria-live="polite"></div>
+</div>
+
+<svg class="blob" id="blob" aria-hidden="true" focusable="false">
+  <path id="blobPathSolid" class="blob-path solid" d="" style="opacity:0"/>
+  <path id="blobPath" class="blob-path" d="" style="opacity:0"/>
+  <g id="targets" style="opacity:0">
+    <line id="tl1" class="tline"/>
+    <text id="tn1" class="tname" text-anchor="middle"></text>
+    <text id="tr1" class="trom" text-anchor="middle"></text>
+    <line id="tl2" class="tline"/>
+    <text id="tn2" class="tname" text-anchor="middle"></text>
+    <text id="tr2" class="trom" text-anchor="middle"></text>
+    <line id="tl3" class="tline"/>
+    <text id="tn3" class="tname" text-anchor="middle"></text>
+    <text id="tr3" class="trom" text-anchor="middle"></text>
+    <line id="tl4" class="tline"/>
+    <text id="tn4" class="tname" text-anchor="middle"></text>
+    <text id="tr4" class="trom" text-anchor="middle"></text>
+  </g>
+  <g id="tpin" style="opacity:0">
+    <line id="tlp" class="tline on"/>
+    <text id="tnp" class="tname on" text-anchor="middle"></text>
+    <text id="trp" class="trom on" text-anchor="middle"></text>
+  </g>
+</svg>
+
+<script>
+(function () {
+  'use strict';
+
+  const KEYS = [
+    { midi: 60, notes: ['C',  'D',  'E',  'F',  'G',  'A',  'B',  'C'] },
+    { midi: 62, notes: ['D',  'E',  'F#', 'G',  'A',  'B',  'C#', 'D'] },
+    { midi: 64, notes: ['E',  'F#', 'G#', 'A',  'B',  'C#', 'D#', 'E'] },
+    { midi: 66, notes: ['F#', 'G#', 'A#', 'B',  'C#', 'D#', 'E#', 'F#'] },
+    { midi: 68, notes: ['Ab', 'Bb', 'C',  'Db', 'Eb', 'F',  'G',  'Ab'] },
+    { midi: 70, notes: ['Bb', 'C',  'D',  'Eb', 'F',  'G',  'A',  'Bb'] },
+  ];
+
+  function intervalsFromSteps(steps) {
+    const intervals = [0];
+    for (const step of steps) {
+      if (step !== 'W' && step !== 'H') {
+        throw new Error('Mode steps may only contain W and H: ' + steps);
+      }
+      intervals.push(intervals[intervals.length - 1] + (step === 'W' ? 2 : 1));
+    }
+    if (intervals.length !== 8 || intervals[7] !== 12) {
+      throw new Error('Mode steps must span one octave: ' + steps);
+    }
+    return intervals.slice(0, 7);
+  }
+
+  const stepMode = (name, steps) => ({ name, intervals: intervalsFromSteps(steps) });
+  const MODES = [
+    stepMode('Ionian', 'WWHWWWH'),
+    stepMode('Dorian', 'WHWWWHW'),
+    stepMode('Phrygian', 'HWWWHWW'),
+    stepMode('Lydian', 'WWWHWWH'),
+    stepMode('Mixolydian', 'WWHWWHW'),
+    stepMode('Aeolian', 'WHWWHWW'),
+    stepMode('Locrian', 'HWWHWWW'),
+    { name: 'Harmonic minor', intervals: [0, 2, 3, 5, 7, 8, 11] },
+    stepMode('Joen', 'WHWWWWH'),
+    stepMode('Zobanian', 'HWWWWHW'),
+    stepMode('Thanosian', 'WWWWHWH'),
+    stepMode('Harambien', 'WWWHWHW'),
+    stepMode('Nelsonian', 'WWHWHWW'),
+    stepMode('Sunian', 'WHWHWWW'),
+    stepMode('Gexian', 'HWHWWWW'),
+    stepMode('Whole 0', 'HWWWWWH'),
+    stepMode('Whole 1', 'WWWWWHH'),
+    stepMode('Whole 2', 'WWWWHHW'),
+    stepMode('Whole 3', 'WWWHHWW'),
+    stepMode('Whole 4', 'WWHHWWW'),
+    stepMode('Whole 5', 'WHHWWWW'),
+    stepMode('Whole 6', 'HHWWWWW'),
+    stepMode('Melodic minor', 'WHWWWWH'),
+  ];
+  const MAJOR_INTERVALS = [0, 2, 4, 5, 7, 9, 11];
+  const ROMAN_NUMERALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+  const LETTERS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+  const NATURAL_PCS = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+
+  const DUR   = 420;
+  const XFADE = 300;
+  const EASE  = 'cubic-bezier(.45,.05,.15,1)';
+
+  /* vertical nudge (in px) applied to notes that carry an accidental */
+  const ACC_SHIFT = -10;
+  const MODE_DRAG_STEP = 30;
+  const MODE_DRAG_SPEED_SCALE = 4;
+  const MODE_DRAG_MAX_STEP = 300;
+
+  /* hover playback */
+  const PEAK     = 0.55;  /* per-chord peak at full volume (voices are normalised) */
+  const WHEEL_K  = 0.0015;/* volume change per wheel pixel */
+  const WHEEL_MAX_DELTA = 13.33; /* cap volume change per wheel event (px) */
+
+  /* chord voicings (semitones above the root) */
+  const CHORD_TYPES = {
+    maj:  [0, 4, 7],
+    min:  [0, 3, 7],
+    dim:  [0, 3, 6],
+    aug:  [0, 4, 8],
+    sus2b5: [0, 2, 6],
+    sus2: [0, 2, 7],
+    sus2aug: [0, 2, 8],
+    minaug: [0, 3, 8],
+    majb5: [0, 4, 6],
+    maj7: [0, 4, 7, 11],
+    m7:   [0, 3, 7, 10],
+    dom7: [0, 4, 7, 10],
+    dim7: [0, 3, 6, 9],
+  };
+  const TYPE_SUFFIX = {
+    maj: '', min: 'm', dim: 'dim', aug: '+',
+    sus2b5: 'sus2b5', sus2: 'sus2', sus2aug: 'sus2#5',
+    minaug: 'm#5', majb5: 'maj♭5',
+    maj7: 'maj7', m7: 'm7', dom7: '7', dim7: 'dim7',
+  };
+  const ROMAN_SUFFIX = {
+    sus2b5: 'sus2♭5', sus2: 'sus2', sus2aug: 'sus2#5',
+    minaug: '#5', majb5: '♭5',
+  };
+
+  /* modal interchange target for each of the 8 slots:
+     root = semitones above the key's tonic */
+  const MODAL = [
+    { off: 1,  type: 'maj7', roman: 'bIImaj7'  },
+    { off: 2,  type: 'dim',  roman: 'IIdim'    },
+    { off: 3,  type: 'maj7', roman: 'bIIImaj7' },
+    { off: 5,  type: 'm7',   roman: 'IVm7'     },
+    { off: 7,  type: 'm7',   roman: 'Vm7'      },
+    { off: 8,  type: 'maj7', roman: 'bVImaj7'  },
+    { off: 10, type: 'm7',   roman: 'bVIIm7'   },
+    { off: 10, type: 'dom7', roman: 'bVII7'    },
+  ];
+
+  /* accidental spelling per key (same order as KEYS):
+     sd = secondary dominants, mi = modal interchange, ts = tritone sub,
+     ld = leading-tone dim7: each true if it spells with flats */
+  const KEY_FLATS = [
+    { sd: false, mi: true,  ts: true,  ld: false },  /* C  */
+    { sd: false, mi: true,  ts: true,  ld: false },  /* D  */
+    { sd: false, mi: false, ts: false, ld: false },  /* E  */
+    { sd: false, mi: false, ts: false, ld: false },  /* F# */
+    { sd: true,  mi: true,  ts: true,  ld: true  },  /* Ab */
+    { sd: true,  mi: true,  ts: true,  ld: true  },  /* Bb */
+  ];
+  const SHARP_N = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  const FLAT_N  = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+
+  function spellScaleNote(midi, letter) {
+    let accidental = (((midi % 12) - NATURAL_PCS[letter] + 12) % 12);
+    if (accidental > 6) accidental -= 12;
+    return letter + (accidental > 0 ? '#'.repeat(accidental) : 'b'.repeat(-accidental));
+  }
+
+  function triadQuality(intervals, degree) {
+    const root = intervals[degree];
+    const thirdIndex = degree + 2;
+    const fifthIndex = degree + 4;
+    const third = intervals[thirdIndex % 7] + (thirdIndex >= 7 ? 12 : 0) - root;
+    const fifth = intervals[fifthIndex % 7] + (fifthIndex >= 7 ? 12 : 0) - root;
+    const qualities = {
+      '4,7': 'maj',
+      '3,7': 'min',
+      '3,6': 'dim',
+      '4,8': 'aug',
+      '2,6': 'sus2b5',
+      '2,7': 'sus2',
+      '2,8': 'sus2aug',
+      '3,8': 'minaug',
+      '4,6': 'majb5',
+    };
+    const quality = qualities[third + ',' + fifth];
+    if (quality) return quality;
+    throw new Error('Unsupported diatonic triad: ' + third + ',' + fifth);
+  }
+
+  function buildScale(keyIndex, modeIndex) {
+    const key = KEYS[keyIndex];
+    const mode = MODES[modeIndex];
+    const tonicLetter = key.notes[0].charAt(0);
+    const tonicLetterIndex = LETTERS.indexOf(tonicLetter);
+    const intervals = [...mode.intervals, 12];
+    const notes = [];
+    const qualities = [];
+    const labels = [];
+
+    for (let degree = 0; degree < 7; degree++) {
+      const letter = LETTERS[(tonicLetterIndex + degree) % LETTERS.length];
+      notes.push(spellScaleNote(key.midi + mode.intervals[degree], letter));
+      const quality = triadQuality(mode.intervals, degree);
+      qualities.push(quality);
+      const alteration = mode.intervals[degree] - MAJOR_INTERVALS[degree];
+      const prefix = alteration > 0 ? '#'.repeat(alteration) : 'b'.repeat(-alteration);
+      const numeral = quality === 'maj' || quality === 'aug' || quality === 'majb5' ||
+        quality.startsWith('sus2')
+        ? ROMAN_NUMERALS[degree]
+        : ROMAN_NUMERALS[degree].toLowerCase();
+      const qualitySuffix = quality === 'dim' ? '°'
+        : quality === 'aug' ? '+'
+          : ROMAN_SUFFIX[quality] || '';
+      labels.push(prefix + numeral + qualitySuffix);
+    }
+
+    notes.push(notes[0]);
+    qualities.push(qualities[0]);
+    labels.push(labels[0]);
+    return { intervals, notes, qualities, labels };
+  }
+
+  /* vertical layout of the target lines */
+  const DRAG_ARM = 5;   /* px of movement before targets can be picked */
+  const T_HYST   = 6;   /* px of stickiness between targets */
+
+  const notesEl = document.getElementById('notes');
+  const prevBtn = document.getElementById('prev');
+  const nextBtn = document.getElementById('next');
+  const modeWheel = document.getElementById('modeWheel');
+  const modeArc = document.getElementById('modeArc');
+  const modeArcPath = document.getElementById('modeArcPath');
+  const modeChoices = MODES.map((mode, index) => {
+    const choice = document.createElement('button');
+    choice.type = 'button';
+    choice.className = 'mode-choice';
+    choice.dataset.mode = String(index);
+    choice.textContent = mode.name;
+    modeWheel.appendChild(choice);
+    return choice;
+  });
+
+  let keyIdx    = 0;
+  let modeIdx   = 0;
+  let scaleData = buildScale(keyIdx, modeIdx);
+  let modeRadius = 100;
+  let modeDrag = null;
+  let suppressModeClick = false;
+  let slotW     = 80;
+  let fontSize  = 44;
+  let interactDist = 132;
+  let cutoffY      = Infinity;  /* chords ignore the pointer below this y (the history lives there) */
+  let noteEls   = [];
+  let animating = false;
+  let ac        = null;
+
+  /* ================= audio ================= */
+
+  /* every chord goes through one shared bus: master gain -> soft limiter.
+     Overlapping chords (a new one starting while the old one rings out)
+     used to add up past 0 dBFS, which is what sounded like clipping. */
+  let bus = null;
+
+  const TAIL      = 0.6;    /* normal ring-out after release (s) */
+  const FAST_TAIL = 0.07;   /* ring-out when too many tails pile up (s) */
+  const MAX_TAILS = 2;      /* chords allowed to ring out at once */
+  const tails     = [];     /* chords currently fading out, oldest first */
+
+  function audio() {
+    if (!ac) {
+      ac = new (window.AudioContext || window.webkitAudioContext)();
+
+      const master = ac.createGain();
+      master.gain.value = 0.9;
+
+      const lim = ac.createDynamicsCompressor();
+      lim.threshold.value = -6;
+      lim.knee.value      = 6;
+      lim.ratio.value     = 12;
+      lim.attack.value    = 0.003;
+      lim.release.value   = 0.1;
+
+      master.connect(lim);
+      lim.connect(ac.destination);
+      bus = master;
+    }
+    if (ac.state === 'suspended') ac.resume();
+    return ac;
+  }
+
+  function startChord(midi, quality, vol) {
+    const ctx = audio();
+    const t   = ctx.currentTime;
+
+    /* smooth exponential-style attack instead of a straight-line ramp */
+    const out = ctx.createGain();
+    out.gain.setValueAtTime(0, t);
+    out.gain.setTargetAtTime(PEAK * vol * vol, t, 0.008);
+    out.connect(bus);
+
+    const intervals = CHORD_TYPES[quality] || CHORD_TYPES.maj;
+    const weights   = [1.00, 0.85, 0.75, 0.65];
+
+    const parts = [{ s: -12, g: 0.45 }];
+    intervals.forEach((s, i) => parts.push({ s, g: weights[i] }));
+
+    /* normalise so a triad and a 7th chord have the same peak level */
+    const total = parts.reduce((a, p) => a + p.g, 0);
+
+    const oscs = [];
+    for (const p of parts) {
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = 440 * Math.pow(2, (midi + p.s - 69) / 12);
+      const g = ctx.createGain();
+      g.gain.value = p.g / total;
+      osc.connect(g).connect(out);
+      osc.start(t);
+      oscs.push(osc);
+    }
+
+    let released = false;
+    let lastV    = vol;
+
+    function fade(time) {
+      const rt = ctx.currentTime;
+      if (out.gain.cancelAndHoldAtTime) {
+        out.gain.cancelAndHoldAtTime(rt);
+      } else {
+        /* browsers without cancelAndHold: clear pending automation first,
+           otherwise leftover events cause a jump */
+        const cur = out.gain.value;
+        out.gain.cancelScheduledValues(rt);
+        out.gain.setValueAtTime(cur, rt);
+      }
+      out.gain.exponentialRampToValueAtTime(0.0001, rt + time);
+      const end = rt + time + 0.03;
+      for (const o of oscs) { try { o.stop(end); } catch (e) {} }
+    }
+
+    return {
+      setVolume(v) {
+        /* skip no-op updates so we don't flood the gain with automation */
+        if (released || Math.abs(v - lastV) < 0.002) return;
+        lastV = v;
+        out.gain.setTargetAtTime(PEAK * v * v, ctx.currentTime, 0.04);
+      },
+      release() {
+        if (released) return;
+        released = true;
+        fade(TAIL);
+
+        const entry = { fast() { fade(FAST_TAIL); } };
+        tails.push(entry);
+        oscs[0].onended = () => {
+          out.disconnect();
+          const i = tails.indexOf(entry);
+          if (i >= 0) tails.splice(i, 1);
+        };
+
+        /* too many overlapping tails: quickly fade the oldest ones */
+        while (tails.length > MAX_TAILS) tails.shift().fast();
+      }
+    };
+  }
+
+  /* ================= note construction ================= */
+
+  function writeLabel(label, name, quality) {
+    const pcChar  = name.charAt(0);
+    const accChar = name.slice(1);
+    label._pc.textContent  = pcChar;
+    label._acc.textContent = accChar;
+    label._acc.style.opacity = accChar ? '1' : '0';
+    label._quality.textContent = quality;
+  }
+
+  function makeLabel(name, quality) {
+    const label = document.createElement('span');
+    label.className = 'label';
+
+    const letterLine = document.createElement('span');
+    letterLine.className = 'letterLine';
+
+    const pc  = document.createElement('span');
+    pc.className = 'pc';
+    const acc = document.createElement('span');
+    acc.className = 'acc';
+
+    letterLine.appendChild(pc);
+    letterLine.appendChild(acc);
+
+    const qual = document.createElement('span');
+    qual.className = 'quality';
+
+    label.appendChild(letterLine);
+    label.appendChild(qual);
+
+    label._pc      = pc;
+    label._acc     = acc;
+    label._quality = qual;
+
+    writeLabel(label, name, quality);
+    return label;
+  }
+
+  function applyShift(el, hasAcc) {
+    el._accShift = hasAcc ? ACC_SHIFT : 0;
+    el._inner.style.setProperty('--shift', el._accShift + 'px');
+  }
+
+  function buildNote(name, quality) {
+    const el = document.createElement('div');
+    el.className = 'note';
+
+    const inner = document.createElement('div');
+    inner.className = 'inner';
+    el.appendChild(inner);
+    el._inner = inner;
+
+    const label = makeLabel(name, quality);
+    inner.appendChild(label);
+    el._label = label;
+
+    applyShift(el, name.length > 1);
+
+    return el;
+  }
+
+  function placeNote(el, slot) {
+    el.dataset.slot    = String(slot);
+    el.style.transform = `translateX(${slot * slotW}px)`;
+  }
+
+  /* ================= blob measurement ================= */
+
+  function measureNoteBlob(el) {
+    if (!el._label || el._dying || !el.isConnected) return;
+
+    const label    = el._label;
+    const noteRect = el.getBoundingClientRect();
+    const pcRect   = label._pc.getBoundingClientRect();
+    const qRect    = label._quality.getBoundingClientRect();
+    const accRect  = label._acc.getBoundingClientRect();
+
+    let left   = Math.min(pcRect.left,   qRect.left);
+    let right  = Math.max(pcRect.right,  qRect.right);
+    let top    = Math.min(pcRect.top,    qRect.top);
+    let bottom = Math.max(pcRect.bottom, qRect.bottom);
+
+    if (label._acc.textContent) {
+      left   = Math.min(left,   accRect.left);
+      right  = Math.max(right,  accRect.right);
+      top    = Math.min(top,    accRect.top);
+      bottom = Math.max(bottom, accRect.bottom);
+    }
+
+    const cx = (left + right) / 2;
+    const cy = (top + bottom) / 2;
+
+    const noteCX = noteRect.left + noteRect.width / 2;
+    const noteCY = noteRect.top + noteRect.height / 2;
+
+    const pad = fontSize * 0.22;
+    const rx  = (right - left) / 2 + pad;
+    const ry  = (bottom - top) / 2 + pad;
+    let r     = Math.max(rx, ry);
+
+    r = Math.min(r, slotW * 0.46);
+
+    const tx = cx - noteCX;
+    const ty = cy - noteCY;
+
+    if (!el._blob) {
+      el._blob = { x: tx, y: ty, r: r, tx: tx, ty: ty, tr: r };
+    } else {
+      el._blob.tx = tx;
+      el._blob.ty = ty;
+      el._blob.tr = r;
+    }
+  }
+
+  /* ================= text transition (crossfade) ================= */
+
+  function setNote(el, name, quality) {
+    const cur = el._label;
+    const pc  = name.charAt(0);
+    const acc = name.slice(1);
+
+    if (cur._pc.textContent === pc &&
+        cur._acc.textContent === acc &&
+        cur._quality.textContent === quality) return;
+
+    const next = makeLabel(name, quality);
+    el._inner.appendChild(next);
+
+    next.animate(
+      [{ opacity: 0 }, { opacity: 1 }],
+      { duration: XFADE, easing: 'ease', fill: 'both' }
+    );
+
+    const out = cur.animate(
+      [{ opacity: 1 }, { opacity: 0 }],
+      { duration: XFADE, easing: 'ease', fill: 'both' }
+    );
+    out.onfinish = () => cur.remove();
+
+    el._label = next;
+    applyShift(el, name.length > 1);
+    measureNoteBlob(el);
+  }
+
+  function cancelModeChoiceMotion(choice) {
+    if (!choice._modePositionAnimation) return;
+    choice._modePositionAnimation.cancel();
+    choice._modePositionAnimation = null;
+  }
+
+  function freezeModeChoicePosition(choice) {
+    const position = getComputedStyle(choice);
+    const left = position.left;
+    const top = position.top;
+    cancelModeChoiceMotion(choice);
+    choice.style.left = left;
+    choice.style.top = top;
+  }
+
+  function setModeChoicePosition(choice, offset, animate) {
+    const angle = -offset * Math.PI / 6;
+    const left = modeRadius * Math.cos(angle);
+    const top = modeRadius + modeRadius * Math.sin(angle);
+    const computed = getComputedStyle(choice);
+    const fromLeft = parseFloat(computed.left);
+    const fromTop = parseFloat(computed.top);
+    cancelModeChoiceMotion(choice);
+
+    if (!animate || !Number.isFinite(fromLeft) || !Number.isFinite(fromTop)) {
+      choice.style.left = left.toFixed(1) + 'px';
+      choice.style.top = top.toFixed(1) + 'px';
+      choice._modePositionInitialized = true;
+      return;
+    }
+
+    const startAngle = Math.atan2(fromTop - modeRadius, fromLeft);
+    let angleDelta = angle - startAngle;
+    while (angleDelta > Math.PI) angleDelta -= Math.PI * 2;
+    while (angleDelta < -Math.PI) angleDelta += Math.PI * 2;
+    if (Math.abs(angleDelta) < 0.001) {
+      choice.style.left = left.toFixed(1) + 'px';
+      choice.style.top = top.toFixed(1) + 'px';
+      choice._modePositionInitialized = true;
+      return;
+    }
+
+    const steps = Math.max(4, Math.ceil(Math.abs(angleDelta) * modeRadius / 4));
+    const frames = Array.from({ length: steps + 1 }, (_, step) => {
+      const currentAngle = startAngle + angleDelta * step / steps;
+      return {
+        left: (modeRadius * Math.cos(currentAngle)).toFixed(2) + 'px',
+        top: (modeRadius + modeRadius * Math.sin(currentAngle)).toFixed(2) + 'px',
+      };
+    });
+    const animation = choice.animate(frames, {
+      duration: 220,
+      easing: 'linear',
+      fill: 'forwards',
+    });
+    choice._modePositionAnimation = animation;
+    animation.onfinish = () => {
+      if (choice._modePositionAnimation !== animation) return;
+      choice.style.left = left.toFixed(1) + 'px';
+      choice.style.top = top.toFixed(1) + 'px';
+      choice._modePositionInitialized = true;
+      choice._modePositionAnimation = null;
+      animation.cancel();
+    };
+  }
+
+  function updateModeWheel(animate = true) {
+    modeChoices.forEach((choice) => {
+      const index = Number(choice.dataset.mode);
+      let offset = (index - modeIdx + MODES.length) % MODES.length;
+      if (offset > Math.floor(MODES.length / 2)) offset -= MODES.length;
+      const hidden = Math.abs(offset) > 2;
+      const wasHidden = choice.classList.contains('hidden-neighbor');
+
+      if (hidden) {
+        if (!wasHidden) {
+          const wasPositioned = choice._modePositionInitialized;
+          if (!wasPositioned) {
+            setModeChoicePosition(choice, Math.sign(offset) * 3, false);
+          } else {
+            freezeModeChoicePosition(choice);
+          }
+          choice.classList.add('hidden-neighbor');
+          if (wasPositioned) {
+            choice._modeHideTimer = setTimeout(() => {
+              choice._modeHideTimer = 0;
+              if (!choice.classList.contains('hidden-neighbor')) return;
+              let currentOffset = (index - modeIdx + MODES.length) % MODES.length;
+              if (currentOffset > Math.floor(MODES.length / 2)) currentOffset -= MODES.length;
+              if (Math.abs(currentOffset) > 2) {
+                setModeChoicePosition(choice, Math.sign(currentOffset) * 3, false);
+              }
+            }, 220);
+          }
+        } else if (!choice._modeHideTimer) {
+          setModeChoicePosition(choice, Math.sign(offset) * 3, false);
+        }
+        choice.setAttribute('aria-hidden', 'true');
+        choice.tabIndex = -1;
+      } else {
+        if (wasHidden) {
+          if (choice._modeHideTimer) {
+            clearTimeout(choice._modeHideTimer);
+            choice._modeHideTimer = 0;
+          }
+          setModeChoicePosition(choice, offset, false);
+          choice.classList.remove('hidden-neighbor');
+        } else {
+          setModeChoicePosition(choice, offset, animate);
+        }
+        choice.setAttribute('aria-hidden', 'false');
+        choice.tabIndex = 0;
+      }
+      choice.classList.toggle('active', index === modeIdx);
+      choice.setAttribute('aria-pressed', String(index === modeIdx));
+    });
+    modeWheel.setAttribute('aria-label',
+      KEYS[keyIdx].notes[0] + ' ' + MODES[modeIdx].name + ' mode selector; drag up or down to change mode');
+  }
+
+  function selectMode(index) {
+    const nextMode = (index + MODES.length) % MODES.length;
+    if (nextMode === modeIdx) return;
+    modeIdx = nextMode;
+    scaleData = buildScale(keyIdx, modeIdx);
+    finishRightPreview();
+    stopPlaying();
+    if (held) releaseHold(true);
+    pending = null;
+    noteEls.forEach((el, slot) => setNote(el, scaleData.notes[slot], scaleData.labels[slot]));
+    updateModeWheel();
+  }
+
+  /* ================= sliding ================= */
+
+  function slide(el, from, to, fromOpacity, toOpacity, done) {
+    const kf = [];
+    const k0 = { transform: from };
+    if (fromOpacity !== undefined) k0.opacity = fromOpacity;
+    const k1 = { transform: to };
+    if (toOpacity !== undefined) k1.opacity = toOpacity;
+    kf.push(k0, k1);
+
+    const anim = el.animate(kf, { duration: DUR, easing: EASE, fill: 'forwards' });
+    anim.onfinish = () => {
+      el.style.transform = to;
+      if (toOpacity !== undefined) el.style.opacity = String(toOpacity);
+      anim.cancel();
+      if (done) done();
+    };
+  }
+
+  function shift(moveLeft) {
+    if (animating || noteEls.length !== 8) return;
+    animating = true;
+
+    keyIdx = (keyIdx + (moveLeft ? 1 : -1) + KEYS.length) % KEYS.length;
+    scaleData = buildScale(keyIdx, modeIdx);
+    finishRightPreview(false);
+    clearLatchedChord();
+    updateModeWheel();
+    const names = scaleData.notes;
+    const labels = scaleData.labels;
+    const old   = noteEls.slice();
+    const next  = new Array(8);
+
+    if (moveLeft) {
+      const ex = old[0];
+      if (held && held.el === ex) releaseHold();
+      ex._dying = true;
+      ex.style.pointerEvents = 'none';
+      slide(ex, 'translateX(0px)', `translateX(${-slotW}px)`, 1, 0, () => ex.remove());
+
+      for (let i = 1; i < 8; i++) {
+        const el      = old[i];
+        const newSlot = i - 1;
+        setNote(el, names[newSlot], labels[newSlot]);
+        placeNote(el, newSlot);
+        slide(el, `translateX(${i * slotW}px)`, `translateX(${newSlot * slotW}px)`);
+        next[newSlot] = el;
+      }
+
+      const el = buildNote(names[7], labels[7]);
+      el.style.pointerEvents = 'none';
+      el.style.opacity       = '0';
+      el.style.transform     = `translateX(${8 * slotW}px)`;
+      notesEl.appendChild(el);
+      placeNote(el, 7);
+      measureNoteBlob(el);
+      slide(el, `translateX(${8 * slotW}px)`, `translateX(${7 * slotW}px)`, 0, 1, () => {
+        el.style.pointerEvents = '';
+      });
+      next[7] = el;
+
+    } else {
+      const ex = old[7];
+      if (held && held.el === ex) releaseHold();
+      ex._dying = true;
+      ex.style.pointerEvents = 'none';
+      slide(ex, `translateX(${7 * slotW}px)`, `translateX(${8 * slotW}px)`, 1, 0, () => ex.remove());
+
+      for (let i = 0; i < 7; i++) {
+        const el      = old[i];
+        const newSlot = i + 1;
+        setNote(el, names[newSlot], labels[newSlot]);
+        placeNote(el, newSlot);
+        slide(el, `translateX(${i * slotW}px)`, `translateX(${newSlot * slotW}px)`);
+        next[newSlot] = el;
+      }
+
+      const el = buildNote(names[0], labels[0]);
+      el.style.pointerEvents = 'none';
+      el.style.opacity       = '0';
+      el.style.transform     = `translateX(${-slotW}px)`;
+      notesEl.appendChild(el);
+      placeNote(el, 0);
+      measureNoteBlob(el);
+      slide(el, `translateX(${-slotW}px)`, 'translateX(0px)', 0, 1, () => {
+        el.style.pointerEvents = '';
+      });
+      next[0] = el;
+    }
+
+    noteEls = next;
+    setTimeout(() => { animating = false; }, DUR);
+  }
+
+  /* ==================================================================
+     GOOEY BLOB CURSOR
+     ================================================================== */
+
+  const svgEl      = document.getElementById('blob');
+  const dashedPath = document.getElementById('blobPath');
+  const solidPath  = document.getElementById('blobPathSolid');
+
+  const MOUSE_R  = 12;
+  const FADE_T   = 150;
+  const LEAD     = 0.035;
+  const MAX_LEAD = 45;
+
+  const pointer = { x: -9999, y: -9999, active: false };
+  let pvx = 0, pvy = 0;
+  let lastMoveX = 0, lastMoveY = 0, lastMoveT = 0;
+
+  let lastT = 0;
+
+  const chord = { x: 0, y: 0, r: 0, el: null, init: false };
+  let dashedAlpha = 0;
+
+  const solid = { x: 0, y: 0, r: 0, init: false, alpha: 0 };
+
+  let held = null;
+
+  const clamp = (v, lo, hi) => v < lo ? lo : v > hi ? hi : v;
+
+  function sampleArc(cx, cy, r, a0, a1, n, out, skipFirst) {
+    for (let i = skipFirst ? 1 : 0; i <= n; i++) {
+      const a = a0 + (a1 - a0) * (i / n);
+      out.push(cx + r * Math.cos(a), cy + r * Math.sin(a));
+    }
+  }
+
+  function sampleCubic(x0,y0, x1,y1, x2,y2, x3,y3, n, out, skipFirst) {
+    for (let i = skipFirst ? 1 : 0; i <= n; i++) {
+      const t  = i / n, mt = 1 - t;
+      const a = mt*mt*mt, b = 3*mt*mt*t, c = 3*mt*t*t, d = t*t*t;
+      out.push(a*x0 + b*x1 + c*x2 + d*x3,
+               a*y0 + b*y1 + c*y2 + d*y3);
+    }
+  }
+
+  function inwardDir(ax, ay, ux, uy, x0, y0, x1, y1, fx, fy) {
+    const mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
+    const t  = (mx - ax) * ux + (my - ay) * uy;
+    const px = ax + ux * t,   py = ay + uy * t;
+    const ix = px - mx, iy = py - my;
+    const len = Math.hypot(ix, iy);
+    if (len < 0.001) return { x: fx, y: fy };
+    return { x: ix / len, y: iy / len };
+  }
+
+  /* slow, breathing wobble field */
+  function wobble(x, y, t) {
+    return 2.0 * Math.sin(x * 0.043 + y * 0.029 + 1.7 + t * 0.0015)
+         + 1.2 * Math.sin(x * 0.109 - y * 0.077 + 4.2 + t * 0.0023)
+         + 0.55 * Math.sin(x * 0.213 + y * 0.171 + 2.1 + t * 0.0031);
+  }
+
+  /* finer, higher-frequency shape variation */
+  function fineNoise(x, y, t) {
+    return 0.55 * Math.sin(x * 0.51 + y * 0.79 + t * 0.0049)
+         + 0.32 * Math.sin(x * 0.93 - y * 0.83 + t * 0.0036)
+         + 0.16 * Math.sin(x * 1.27 + y * 1.13 + t * 0.0061);
+  }
+
+  function pathFromPoints(pts, t) {
+    const n = pts.length / 2;
+    let d = '';
+    for (let i = 0; i < n; i++) {
+      const x  = pts[i * 2], y = pts[i * 2 + 1];
+      const ip = (i - 1 + n) % n, inx = (i + 1) % n;
+
+      let tx = pts[inx * 2] - pts[ip * 2];
+      let ty = pts[inx * 2 + 1] - pts[ip * 2 + 1];
+      const tl = Math.hypot(tx, ty) || 1;
+
+      const nx = -ty / tl, ny = tx / tl;
+      const w  = wobble(x, y, t) + fineNoise(x, y, t);
+
+      d += (i === 0 ? 'M' : 'L') +
+           (x + nx * w).toFixed(2) + ' ' +
+           (y + ny * w).toFixed(2);
+    }
+    return d + 'Z';
+  }
+
+  function circlePath(cx, cy, r, t) {
+    const pts = [];
+    sampleArc(cx, cy, r, 0, Math.PI * 2, 120, pts, false);
+    pts.length -= 2;
+    return pathFromPoints(pts, t);
+  }
+
+  function buildBlob(ax, ay, ra, bx, by, rb, t) {
+    const dx = bx - ax, dy = by - ay;
+    const dist = Math.hypot(dx, dy) || 0.001;
+
+    const alpha = Math.atan2(dy, dx);
+    const phi   = Math.acos(clamp((ra - rb) / dist, -1, 1));
+    const ux    = dx / dist, uy = dy / dist;
+
+    const pts = [];
+
+    /* long way round the chord */
+    sampleArc(ax, ay, ra, alpha + phi, alpha + 2 * Math.PI - phi, 120, pts, false);
+
+    /* neck: chord → cursor */
+    const n2x = Math.cos(alpha - phi), n2y = Math.sin(alpha - phi);
+    const p2x = ax + ra * n2x, p2y = ay + ra * n2y;
+    const q2x = bx + rb * n2x, q2y = by + rb * n2y;
+    const in2 = inwardDir(ax, ay, ux, uy, p2x, p2y, q2x, q2y, -n2x, -n2y);
+    const h   = 0.20 * (ra + rb) * 4 / 3;
+
+    sampleCubic(
+      p2x, p2y,
+      p2x + (q2x - p2x) / 3 + in2.x * h, p2y + (q2y - p2y) / 3 + in2.y * h,
+      p2x + 2 * (q2x - p2x) / 3 + in2.x * h, p2y + 2 * (q2y - p2y) / 3 + in2.y * h,
+      q2x, q2y,
+      48, pts, true
+    );
+
+    /* short way round the cursor */
+    sampleArc(bx, by, rb, alpha - phi, alpha + phi, 120, pts, true);
+
+    /* neck: cursor → chord */
+    const n1x = Math.cos(alpha + phi), n1y = Math.sin(alpha + phi);
+    const p1x = ax + ra * n1x, p1y = ay + ra * n1y;
+    const q1x = bx + rb * n1x, q1y = by + rb * n1y;
+    const in1 = inwardDir(ax, ay, ux, uy, q1x, q1y, p1x, p1y, -n1x, -n1y);
+
+    sampleCubic(
+      q1x, q1y,
+      q1x + (p1x - q1x) / 3 + in1.x * h, q1y + (p1y - q1y) / 3 + in1.y * h,
+      q1x + 2 * (p1x - q1x) / 3 + in1.x * h, q1y + 2 * (p1y - q1y) / 3 + in1.y * h,
+      p1x, p1y,
+      48, pts, true
+    );
+
+    pts.length -= 2;
+    return pathFromPoints(pts, t);
+  }
+
+  function drawBlob(path, st, px, py, now) {
+    const ra = st.r;
+    const rb = Math.min(MOUSE_R, ra * 0.9);
+    const d  = Math.hypot(px - st.x, py - st.y);
+
+    if (d <= ra - rb) {
+      path.setAttribute('d', circlePath(st.x, st.y, ra, now));
+    } else {
+      path.setAttribute('d', buildBlob(st.x, st.y, ra, px, py, rb, now));
+    }
+  }
+
+  function nearestNote(excludeEl, x = pointer.x, y = pointer.y) {
+    let best = null, bestD2 = Infinity;
+    for (let i = 0; i < noteEls.length; i++) {
+      const el = noteEls[i];
+      if (el._dying || !el._blob) continue;
+      if (excludeEl && el === excludeEl) continue;
+
+      const r  = el.getBoundingClientRect();
+      const bx = r.left + r.width / 2  + el._blob.x;
+      const by = r.top  + r.height / 2 + el._blob.y;
+
+      const ddx = bx - x, ddy = by - y;
+      const d2  = ddx * ddx + ddy * ddy;
+      if (d2 < bestD2) {
+        bestD2 = d2;
+        best = { el, bx, by, r: el._blob.r, d2 };
+      }
+    }
+    return best;
+  }
+
+  /* ---------- hover playback + press & hold ---------- */
+
+  let playing = null;   /* chord sounding because the pointer is near it */
+  let entryMode = 'latch';
+  let latchedChord = null;
+  let activeNotePlaybackEnabled = true;
+  let clickPreview = null;
+  let rightPreview = null;
+
+  const sigOf = (el) => keyIdx + ':' + modeIdx + ':' + el.dataset.slot;
+
+  function blobCenter(el) {
+    const r = el.getBoundingClientRect();
+    return { x: r.left + r.width / 2 + el._blob.x,
+             y: r.top  + r.height / 2 + el._blob.y };
+  }
+
+  /* ---- master volume, driven by the scroll wheel ---- */
+  let masterVol = 0.8;
+  let volHideT  = 0;
+  const volEl    = document.getElementById('vol');
+  const volThumb = document.getElementById('volThumb');
+
+  function showVolume() {
+    const trackW = 140, thumbW = 5;
+    volThumb.style.left = (masterVol * (trackW - thumbW)).toFixed(1) + 'px';
+    volEl.classList.add('show');
+    clearTimeout(volHideT);
+    volHideT = setTimeout(() => volEl.classList.remove('show'), 1100);
+  }
+
+  function setMasterVol(v) {
+    masterVol = clamp(v, 0, 1);
+    if (held)    held.handle.setVolume(masterVol);
+    if (playing) playing.handle.setVolume(masterVol);
+    if (latchedChord && latchedChord.handle) latchedChord.handle.setVolume(masterVol);
+    if (clickPreview) clickPreview.handle.setVolume(masterVol);
+    if (rightPreview) rightPreview.handle.setVolume(masterVol);
+    if (progressionPlayback && progressionPlayback.handle) {
+      progressionPlayback.handle.setVolume(masterVol);
+    }
+    showVolume();
+  }
+
+  window.addEventListener('wheel', (e) => {
+    if (!histPopover.hidden && histPopover.contains(e.target)) return;
+    if (e.ctrlKey) return;               /* leave pinch-zoom alone */
+    e.preventDefault();
+    let d = e.deltaY;
+    if (e.deltaMode === 1) d *= 16;      /* lines -> px */
+    else if (e.deltaMode === 2) d *= window.innerHeight; /* pages -> px */
+    d = clamp(d, -WHEEL_MAX_DELTA, WHEEL_MAX_DELTA);
+    setMasterVol(masterVol - d * WHEEL_K);   /* scroll up = louder */
+  }, { passive: false });
+
+  volThumb.style.left = (masterVol * 135).toFixed(1) + 'px';
+
+  function startFor(el, vol) {
+    const slot = Number(el.dataset.slot);
+    return startChord(KEYS[keyIdx].midi + scaleData.intervals[slot], scaleData.qualities[slot], vol);
+  }
+
+  function stopPlaying() {
+    if (!playing) return;
+    playing.handle.release();
+    playing = null;
+  }
+
+  function finishClickPreview(event = null) {
+    if (!clickPreview) return;
+    if (event && clickPreview.pointerId !== event.pointerId) return;
+    clickPreview.handle.release();
+    if (clickPreview.el) clickPreview.el.classList.remove('pressed');
+    clickPreview = null;
+  }
+
+  function clearLatchedChord() {
+    finishClickPreview();
+    if (latchedChord && latchedChord.handle) latchedChord.handle.release();
+    if (latchedChord && latchedChord.el) latchedChord.el.classList.remove('pressed');
+    latchedChord = null;
+  }
+
+  function setLatchedChordPlaying(shouldPlay) {
+    if (!latchedChord || latchedChord.el._dying) return false;
+    if (shouldPlay && !latchedChord.handle) {
+      latchedChord.handle = startChord(
+        latchedChord.chord.midi, latchedChord.chord.type, masterVol);
+      latchedChord.el.classList.add('pressed');
+      return true;
+    } else if (!shouldPlay && latchedChord.handle) {
+      latchedChord.handle.release();
+      latchedChord.handle = null;
+      latchedChord.el.classList.remove('pressed');
+      return true;
+    }
+    return false;
+  }
+
+  const playbackIndicator = document.getElementById('playbackIndicator');
+  let playbackIndicatorTimer = 0;
+
+  function showPlaybackIndicator(isPlaying) {
+    playbackIndicator.textContent = isPlaying ? '\u25b6' : '\u23f8';
+    playbackIndicator.classList.remove('show');
+    void playbackIndicator.offsetWidth;
+    playbackIndicator.classList.add('show');
+    clearTimeout(playbackIndicatorTimer);
+    playbackIndicatorTimer = setTimeout(() => {
+      playbackIndicator.classList.remove('show');
+    }, 920);
+  }
+
+  function toggleLatchedPlayback() {
+    finishClickPreview();
+    if (rightPreview) finishRightPreview(true);
+    if (progressionPlayback) cancelProgressionPlayback();
+    activeNotePlaybackEnabled = !activeNotePlaybackEnabled;
+    setLatchedChordPlaying(activeNotePlaybackEnabled);
+    showPlaybackIndicator(activeNotePlaybackEnabled);
+  }
+
+  function finishRightPreview(restoreLatched = true, event = null) {
+    if (!rightPreview) return;
+    if (event && rightPreview.pointerId !== event.pointerId) return;
+    rightPreview.handle.release();
+    const resumeLatched = rightPreview.resumeLatched;
+    rightPreview = null;
+    if (restoreLatched && resumeLatched && entryMode === 'latch') setLatchedChordPlaying(true);
+  }
+
+  function chordAtPoint(x, y) {
+    const el = hoverColumn(x, y, tSel.el) ||
+      (() => {
+        const near = nearestNote(null, x, y);
+        return near && near.d2 <= interactDist * interactDist ? near.el : null;
+      })();
+    if (!el) return null;
+    const target = inWindow(el, x, y, slotW * 0.6)
+      ? pickLevel(el, y, tSel)
+      : 0;
+    return { el, target, chord: targetsFor(el)[target] };
+  }
+
+  function latchChord(selection, event) {
+    const keepPlaying = activeNotePlaybackEnabled;
+    finishRightPreview(false);
+    finishClickPreview();
+    if (latchedChord && latchedChord.handle) latchedChord.handle.release();
+    if (latchedChord && latchedChord.el) latchedChord.el.classList.remove('pressed');
+    latchedChord = null;
+    stopPlaying();
+    if (held) releaseHold(true);
+    const chord = { ...selection.chord };
+    latchedChord = {
+      el: selection.el,
+      sig: sigOf(selection.el),
+      target: selection.target,
+      chord,
+      handle: keepPlaying ? startChord(chord.midi, chord.type, masterVol) : null,
+    };
+    if (keepPlaying) {
+      selection.el.classList.add('pressed');
+    } else {
+      clickPreview = {
+        el: selection.el,
+        pointerId: event.pointerId,
+        handle: startChord(chord.midi, chord.type, masterVol),
+      };
+      selection.el.classList.add('pressed');
+    }
+    pushHistory(chord, true);
+  }
+
+  function previewRightClick(selection, event) {
+    finishClickPreview();
+    if (rightPreview) {
+      rightPreview.handle.release();
+      rightPreview = null;
+    }
+    const resumeLatched = activeNotePlaybackEnabled;
+    setLatchedChordPlaying(false);
+    stopPlaying();
+    if (held) releaseHold(true);
+    rightPreview = {
+      el: selection.el,
+      target: selection.target,
+      chord: selection.chord,
+      pointerId: event.pointerId,
+      resumeLatched,
+      handle: startChord(selection.chord.midi, selection.chord.type, masterVol),
+    };
+  }
+
+  const SWITCH_DWELL = 35;   /* ms the pointer must settle before the sound moves on */
+  let pending = null;
+
+  /* hover mode: the selected chord (or target) plays at the master volume */
+  function updateAudio() {
+    if (entryMode === 'latch') {
+      pending = null;
+      stopPlaying();
+      return;
+    }
+    if (!ac || ac.state !== 'running' || held || progressionPlayback) { pending = null; return; }
+
+    if (!tSel.el) { pending = null; stopPlaying(); return; }
+
+    const el = tSel.el, k = tSel.k, sig = sigOf(el);
+    if (playing && playing.el === el && playing.sig === sig && playing.target === k) {
+      pending = null;
+      playing.handle.setVolume(masterVol);
+      return;
+    }
+
+    /* something is already sounding: only move on once the pointer has
+       settled on the new chord, so sweeping across several chords doesn't
+       machine-gun them */
+    if (playing) {
+      const now = performance.now();
+      if (!pending || pending.el !== el || pending.sig !== sig || pending.k !== k) {
+        pending = { el, sig, k, t: now };
+        return;
+      }
+      if (now - pending.t < SWITCH_DWELL) return;
+    }
+
+    pending = null;
+    stopPlaying();
+    playing = { el, sig, target: k,
+                handle: k ? startTarget(el, k) : startFor(el, masterVol) };
+    logChord(el, k);
+  }
+
+  function syncPlayingClass() {
+    for (let i = 0; i < noteEls.length; i++) {
+      const el = noteEls[i];
+      el.classList.toggle('playing',
+        !!((held && held.el === el) || (playing && playing.el === el) ||
+          (latchedChord && latchedChord.handle && latchedChord.el === el && !rightPreview) ||
+          (clickPreview && clickPreview.el === el) ||
+          (rightPreview && rightPreview.el === el)));
+    }
+  }
+
+  /* press & hold: lock the chord until release */
+  function startHold(el, touch, px, py) {
+    if (held) releaseHold(true);
+
+    let handle, tk = 0;
+    if (playing && playing.el === el && playing.sig === sigOf(el)) {
+      handle = playing.handle;      /* keep the sounding chord, just freeze it */
+      tk = playing.target || 0;
+      playing = null;
+      handle.setVolume(masterVol);
+    } else {
+      stopPlaying();
+      tk = (tSel.el === el) ? tSel.k : 0;
+      handle = tk ? startTarget(el, tk) : startFor(el, masterVol);
+      logChord(el, tk);
+    }
+
+    held = { el, handle, sig: sigOf(el), touch, target: tk, armed: false, px0: px, py0: py };
+
+    if (chord.init && chord.el === el && dashedAlpha > 0.05) {
+      solid.x = chord.x;
+      solid.y = chord.y;
+      solid.r = chord.r;
+      solid.init = true;
+    } else {
+      solid.init = false;
+    }
+
+    clearTimeout(el._releaseT);
+    el.classList.add('pressed');
+  }
+
+  /* on release the held chord hands over to hover mode, which then
+     moves to whichever chord is currently closest (or stops if none) */
+  function releaseHold(noTransfer) {
+    if (!held) return;
+    const h = held;
+    held = null;
+
+    clearTimeout(h.el._releaseT);
+    h.el._releaseT = setTimeout(() => h.el.classList.remove('pressed'), 140);
+
+    const canHand = !noTransfer && !h.touch && pointer.active;
+    const sel = (canHand && tSel.el && !tSel.el._dying && tSel.k > 0)
+      ? { el: tSel.el, k: tSel.k } : null;
+
+    if (sel) {
+      /* released over a target line: lock onto that chord instead */
+      let handle;
+      if (sel.el === h.el && sel.k === h.target && h.sig === sigOf(h.el)) {
+        handle = h.handle;
+      } else {
+        h.handle.release();
+        handle = startTarget(sel.el, sel.k);
+        logChord(sel.el, sel.k);
+      }
+      playing = { el: sel.el, sig: sigOf(sel.el), target: sel.k, handle };
+    } else if (canHand && !h.el._dying && h.target === 0) {
+      playing = { el: h.el, sig: h.sig, target: 0, handle: h.handle };
+    } else {
+      h.handle.release();
+    }
+  }
+
+  function onPointerDown(e) {
+    if (e.button !== 0 &&
+        !(entryMode === 'latch' && (e.button === 1 || e.button === 2))) return;
+
+    const tgt = e.target;
+    if (tgt && tgt.closest && tgt.closest('.arrow')) return;
+    if (tgt && tgt.closest && (tgt.closest('.histbar') || tgt.closest('.mode-wheel'))) return;
+
+    const touch = e.pointerType === 'touch';
+    dragPt.x = e.clientX;
+    dragPt.y = e.clientY;
+    if (!touch) {
+      pointer.x = e.clientX;
+      pointer.y = e.clientY;
+      pointer.active = true;
+    }
+
+    audio();   /* first gesture unlocks sound for hover playback */
+
+    if (entryMode === 'latch') {
+      e.preventDefault();
+      if (e.button === 1) {
+        toggleLatchedPlayback();
+        return;
+      }
+      const selection = e.clientY <= cutoffY
+        ? chordAtPoint(e.clientX, e.clientY)
+        : null;
+      if (!selection) {
+        if (e.button === 2) return;
+        if (progressionPlayback) {
+          cancelProgressionPlayback();
+        }
+        stopPlaying();
+        pending = null;
+        if (held) releaseHold(true);
+        return;
+      }
+      if (e.button === 2) previewRightClick(selection, e);
+      else latchChord(selection, e);
+      return;
+    }
+
+    if (e.clientY > cutoffY) return;
+
+    let el = null;
+    if (playing && !touch && !playing.el._dying) {
+      el = playing.el;
+    } else {
+      const hit = tgt && tgt.closest ? tgt.closest('.note') : null;
+      if (hit && !hit._dying && hit._blob) {
+        el = hit;
+      } else {
+        const near = nearestNote(null, e.clientX, e.clientY);
+        if (near && near.d2 <= interactDist * interactDist) el = near.el;
+      }
+    }
+
+    if (!el) return;
+    startHold(el, touch, e.clientX, e.clientY);
+  }
+
+  function onPointerUp(e) {
+    if (e && e.pointerType !== 'touch') {
+      pointer.x = e.clientX;
+      pointer.y = e.clientY;
+    }
+    finishClickPreview(e);
+    finishRightPreview(true, e);
+    releaseHold(false);
+  }
+
+  /* ---------- chord targets (shown while click-dragging) ---------- */
+
+  const dragPt = { x: 0, y: 0 };   /* latest pointer position, any pointer type */
+
+  const tGroup = document.getElementById('targets');
+  const tEls = [1, 2, 3, 4].map((i) => ({
+    line: document.getElementById('tl' + i),
+    name: document.getElementById('tn' + i),
+    rom:  document.getElementById('tr' + i),
+    key:  '',
+  }));
+  let tAlpha = 0, tEl = null;
+
+  const pcName = (midi, flats) =>
+    (flats ? FLAT_N : SHARP_N)[((midi % 12) + 12) % 12];
+
+  /* [0] diatonic, [1] secondary dominant, [2] modal interchange,
+     [3] tritone sub, [4] leading-tone dim7 */
+  function targetsFor(el) {
+    const slot = Number(el.dataset.slot);
+    const key  = KEYS[keyIdx];
+    const sp   = KEY_FLATS[keyIdx];
+    const root = key.midi + scaleData.intervals[slot];
+    const q    = scaleData.qualities[slot];
+
+    const dia = { midi: root, type: q,
+                  name: scaleData.notes[slot] + TYPE_SUFFIX[q],
+                  roman: scaleData.labels[slot] };
+
+    const sdRoot = root - 5;   /* a fifth above, dropped an octave to stay in register */
+    const sd = { midi: sdRoot, type: 'dom7',
+                 name: pcName(sdRoot, sp.sd) + '7',
+                 roman: 'V7/' + scaleData.labels[slot] };
+
+    const m = MODAL[slot];
+    const mRoot = key.midi + m.off;
+    const mi = { midi: mRoot, type: m.type,
+                 name: pcName(mRoot, sp.mi) + TYPE_SUFFIX[m.type],
+                 roman: m.roman };
+
+    /* tritone sub of the secondary dominant: a dom7 a half step above the target */
+    const ts = { midi: root + 1, type: 'dom7',
+                 name: pcName(root + 1, sp.ts) + '7',
+                 roman: 'subV7/' + scaleData.labels[slot] };
+
+    /* leading-tone dim7: a half step below the target */
+    const ld = { midi: root - 1, type: 'dim7',
+                 name: pcName(root - 1, sp.ld) + 'dim7',
+                 roman: 'vii\u00b07/' + scaleData.labels[slot] };
+
+    return [dia, sd, mi, ts, ld];
+  }
+
+  function targetYs(y0) {
+    const d1   = Math.max(fontSize * 1.45, 46);
+    const room = y0 - 28 - d1;                         /* space above line 1 */
+    const sp   = clamp(room / 3, 30, Math.max(fontSize, 38));
+    return [y0, y0 - d1, y0 - d1 - sp, y0 - d1 - 2 * sp, y0 - d1 - 3 * sp];
+  }
+
+  function targetYsFor(el) {
+    return targetYs(blobCenter(el).y - el._accShift);
+  }
+
+  function pointOnChordAreaRay(originX, originY, pointerX, pointerY) {
+    const bounds = notesEl.getBoundingClientRect();
+    let top = bounds.top;
+    for (const el of noteEls) {
+      if (!el._dying && el._blob) {
+        const ys = targetYsFor(el);
+        top = Math.min(top, ys[ys.length - 1] - 76);
+      }
+    }
+    const sidePadding = 24;
+    const left = bounds.left - sidePadding;
+    const right = bounds.right + sidePadding;
+    const dx = pointerX - originX;
+    const dy = pointerY - originY;
+    let distance = 1;
+
+    if (dx < 0) distance = Math.min(distance, (left - originX) / dx);
+    else if (dx > 0) distance = Math.min(distance, (right - originX) / dx);
+    if (dy < 0) distance = Math.min(distance, (top - originY) / dy);
+    else if (dy > 0) distance = Math.min(distance, (bounds.bottom - originY) / dy);
+
+    const x = originX + dx * distance;
+    const y = originY + dy * distance;
+    const outside = pointerX < left || pointerX > right ||
+      pointerY < top || pointerY > bounds.bottom;
+    return {
+      x: outside ? x : pointerX,
+      y: outside ? y : pointerY,
+      outsideDistance: outside ? Math.hypot(pointerX - x, pointerY - y) : 0,
+    };
+  }
+
+  const tSel = { el: null, k: 0 };   /* chord whose targets are showing + previewed target */
+  const tPos = { x: 0, y: 0 };       /* smoothed anchor for the drawn lines */
+
+  function startTarget(el, k) {
+    const c = targetsFor(el)[k];
+    return startChord(c.midi, c.type, masterVol);
+  }
+
+  /* is the pointer inside the chord's column, from well below it
+     up past the top target line? */
+  function inWindow(el, px, py, halfW) {
+    if (!el._blob) return false;
+    const c  = blobCenter(el);
+    const ys = targetYs(c.y - el._accShift);
+    return Math.abs(px - c.x) <= halfW && py >= ys[ys.length - 1] - 28 && py <= Math.min(c.y + interactDist, cutoffY);
+  }
+
+  /* which chord's column is the pointer over (with a little stickiness) */
+  function hoverColumn(px, py, cur) {
+    if (cur && !cur._dying && inWindow(cur, px, py, slotW * 0.5 + 8)) return cur;
+    let best = null, bd = Infinity;
+    for (let i = 0; i < noteEls.length; i++) {
+      const el = noteEls[i];
+      if (el._dying || !el._blob) continue;
+      const dx = Math.abs(px - blobCenter(el).x);
+      if (dx < bd) { bd = dx; best = el; }
+    }
+    return best && inWindow(best, px, py, slotW * 0.6) ? best : null;
+  }
+
+  /* which of the three levels (0 diatonic, 1 sec. dominant, 2 modal) the
+     pointer height is on, with a little stickiness */
+  function pickLevel(el, py, prev) {
+    const ys = targetYsFor(el);
+    let best = 0, bd = Infinity;
+    for (let i = 0; i < ys.length; i++) {
+      const d = Math.abs(py - ys[i]);
+      if (d < bd) { bd = d; best = i; }
+    }
+    if (el === prev.el && best !== prev.k &&
+        bd > Math.abs(py - ys[prev.k]) - T_HYST) return prev.k;
+    return best;
+  }
+
+  /* decide which chord's targets are showing and which one is selected */
+  function computeSel() {
+    let selEl = null, k = 0;
+
+    if (held && !held.el._dying && held.el._blob) {
+      if (!held.armed &&
+          Math.hypot(dragPt.x - held.px0, dragPt.y - held.py0) > DRAG_ARM) {
+        held.armed = true;
+      }
+      if (!held.armed) {
+        /* haven't moved yet: the selection is simply what's being held */
+        selEl = held.el;
+        k = held.target;
+      } else {
+        selEl = hoverColumn(dragPt.x, dragPt.y, tSel.el);
+        if (selEl) k = pickLevel(selEl, dragPt.y, tSel);
+      }
+    } else if (!held && pointer.active) {
+      selEl = hoverColumn(pointer.x, pointer.y, tSel.el);
+      if (selEl) k = pickLevel(selEl, pointer.y, tSel);
+    }
+
+    tSel.el = selEl;
+    tSel.k  = k;
+  }
+
+  function placeLine(t, x, y, halfW, nameFs, romFs) {
+    t.line.setAttribute('x1', (x - halfW).toFixed(1));
+    t.line.setAttribute('x2', (x + halfW).toFixed(1));
+    t.line.setAttribute('y1', y.toFixed(1));
+    t.line.setAttribute('y2', y.toFixed(1));
+
+    t.rom.setAttribute('x', x.toFixed(1));
+    t.rom.setAttribute('y', (y - 5).toFixed(1));
+    t.rom.setAttribute('font-size', romFs.toFixed(1));
+
+    t.name.setAttribute('x', x.toFixed(1));
+    t.name.setAttribute('y', (y - 5 - romFs - 3).toFixed(1));
+    t.name.setAttribute('font-size', nameFs.toFixed(1));
+  }
+
+  function setLabel(t, ch) {
+    const key = ch.name + '|' + ch.roman;
+    if (t.key === key) return;
+    t.key = key;
+    t.name.textContent = ch.name;
+    t.rom.textContent  = ch.roman;
+  }
+
+  const pGroup = document.getElementById('tpin');
+  const pLine  = {
+    line: document.getElementById('tlp'),
+    name: document.getElementById('tnp'),
+    rom:  document.getElementById('trp'),
+    key:  '',
+  };
+  let pAlpha = 0, pEl = null, pK = 0;
+
+  /* the metaball's chord side for a target: hugs the drawn label */
+  function labelBlob(t) {
+    const a = t.name.getBoundingClientRect();
+    const b = t.rom.getBoundingClientRect();
+    if (!a.width || !b.width) return null;
+
+    const left   = Math.min(a.left,   b.left);
+    const right  = Math.max(a.right,  b.right);
+    const top    = Math.min(a.top,    b.top);
+    const bottom = Math.max(a.bottom, b.bottom);
+
+    const pad = fontSize * 0.2;
+    const r   = Math.min(Math.max((right - left) / 2, (bottom - top) / 2) + pad,
+                         slotW * 0.6);
+    return { x: (left + right) / 2, y: (top + bottom) / 2, r };
+  }
+
+  /* blob anchor for target k of chord el, if its label is currently drawn */
+  function targetBlob(el, k) {
+    if (tEl === el && tAlpha > 0 && k >= 1 && k <= tEls.length) return labelBlob(tEls[k - 1]);
+    if (pEl === el && pK === k && pAlpha > 0)         return labelBlob(pLine);
+    return null;
+  }
+
+  function drawTargets(dt) {
+    const selEl = tSel.el, k = tSel.k;
+
+    /* ---- lines on the hovered chord ---- */
+    if (selEl) {
+      const c = blobCenter(selEl);
+      const targetY = c.y - selEl._accShift;
+      if (tAlpha < 0.02 || !tEl) {
+        tPos.x = c.x; tPos.y = targetY;
+      } else {
+        const a = 1 - Math.exp(-dt / 60);
+        tPos.x += (c.x - tPos.x) * a;
+        tPos.y += (targetY - tPos.y) * a;
+      }
+      tEl = selEl;
+    }
+
+    tAlpha += ((selEl ? 1 : 0) - tAlpha) * (1 - Math.exp(-dt / 110));
+    if (tAlpha < 0.004) tAlpha = 0;
+
+    const nameFs = Math.max(fontSize * 0.34, 11);
+    const romFs  = Math.max(fontSize * 0.2, 8.5);
+    const halfW  = slotW * 0.42;
+
+    if (!tEl || tEl._dying || !tEl._blob) {
+      tAlpha = 0;
+      tGroup.style.opacity = '0';
+    } else {
+      tGroup.style.opacity = tAlpha.toFixed(3);
+      if (tAlpha) {
+        const ys     = targetYs(tPos.y);
+        const chords = targetsFor(tEl);
+        /* the chord being held, if its own column is the one showing */
+        const heldK = held && held.el === tEl
+          ? held.target
+          : latchedChord && latchedChord.el === tEl ? latchedChord.target : 0;
+
+        for (let i = 0; i < tEls.length; i++) {
+          const t  = tEls[i];
+          const on = !!(selEl && k === i + 1);
+          const hl = heldK === i + 1;
+
+          setLabel(t, chords[i + 1]);
+          placeLine(t, tPos.x, ys[i + 1], halfW, nameFs, romFs);
+
+          t.line.classList.toggle('held', hl);
+          t.line.classList.toggle('on', on);
+          t.name.classList.toggle('on', on || hl);
+          t.rom.classList.toggle('on', on || hl);
+        }
+      }
+    }
+
+    /* ---- keep a held target chord's line on screen while dragging away ---- */
+    const pinnedChord = rightPreview
+      ? rightPreview.target > 0 ? rightPreview : null
+      : held && held.target > 0
+        ? held
+        : latchedChord && latchedChord.target > 0 ? latchedChord : null;
+    const pin = !!(pinnedChord && !pinnedChord.el._dying && pinnedChord.el._blob &&
+                   selEl !== pinnedChord.el);
+    if (pin) { pEl = pinnedChord.el; pK = pinnedChord.target; }
+
+    pAlpha += ((pin ? 1 : 0) - pAlpha) * (1 - Math.exp(-dt / 110));
+    if (pAlpha < 0.004) pAlpha = 0;
+
+    if (!pEl || pEl._dying || !pEl._blob) {
+      pAlpha = 0;
+      pGroup.style.opacity = '0';
+    } else {
+      pGroup.style.opacity = pAlpha.toFixed(3);
+      if (pAlpha) {
+        const c  = blobCenter(pEl);
+        const ys = targetYsFor(pEl);
+        setLabel(pLine, targetsFor(pEl)[pK]);
+        placeLine(pLine, c.x, ys[pK], halfW, nameFs, romFs);
+      }
+    }
+  }
+
+  /* ---------- chord history ---------- */
+
+  const SAVED_HIST_MAX    = 50;
+  const HIST_IDLE_MS      = 3000;
+  const HIST_CLEAR_ANIM_MS = 600;
+  const HIST_STORAGE_KEY  = 'chordExplorer.progressions.v1';
+  const HIST_RECOVERY_KEY = 'chordExplorer.progressionRecovery.v1';
+  const PLAY_BEAT_MS      = 500;
+
+  const histBar      = document.getElementById('histBar');
+  const hist         = document.getElementById('hist');
+  const histTrack    = document.getElementById('histTrack');
+  const histClear    = document.getElementById('histClear');
+  const histCopy     = document.getElementById('histCopy');
+  const histCopyWrap = document.getElementById('histCopyWrap');
+  const histCopyKey  = document.getElementById('histCopyKey');
+  const histCopyDegree = document.getElementById('histCopyDegree');
+  const histExport   = document.getElementById('histExport');
+  const histExportWrap = document.getElementById('histExportWrap');
+  const histExportMenu = document.getElementById('histExportMenu');
+  const histExportMidi = document.getElementById('histExportMidi');
+  const histExportWav  = document.getElementById('histExportWav');
+  const histSave     = document.getElementById('histSave');
+  const histArchive  = document.getElementById('histArchive');
+  const histPlay     = document.getElementById('histPlay');
+  const histEntryMode = document.getElementById('histEntryMode');
+  const histPopover  = document.getElementById('histPopover');
+  const histStatus   = document.getElementById('histStatus');
+  let histEntries    = [];
+  let histCursor     = null;
+  let histLast       = '', histLastT = 0;
+  let histActiveT    = -1e9;
+  let histHover      = false;
+  let histFocus      = false;
+  let histClearT     = 0;
+  let histStatusT    = 0;
+  let savedProgressions = [];
+  let recoveryProgression = null;
+  let currentProgressionSaved = false;
+  let progressionPlayback = null;
+
+  function showHistStatus(message, isError) {
+    histStatus.textContent = message;
+    histStatus.classList.toggle('visible', !!message);
+    histStatus.classList.toggle('error', !!isError);
+    clearTimeout(histStatusT);
+    if (message) histStatusT = setTimeout(() => {
+      histStatus.textContent = '';
+      histStatus.classList.remove('visible', 'error');
+    }, 3500);
+  }
+
+  function closeArchive() {
+    histPopover.hidden = true;
+    histBar.classList.remove('tools-open');
+    histArchive.setAttribute('aria-expanded', 'false');
+    if (histEntries.length) histActiveT = performance.now();
+  }
+
+  function isHistoryInteracting() {
+    return histHover || histFocus || histCursor !== null || !histPopover.hidden || !!progressionPlayback;
+  }
+
+  function cancelHistoryClear() {
+    if (histClearT) {
+      clearTimeout(histClearT);
+      histClearT = 0;
+      histTrack.classList.remove('idle-clearing');
+    }
+  }
+
+  function renderHistory(popIndex = null) {
+    histTrack.textContent = '';
+    const caret = document.createElement('span');
+    caret.className = 'hist-caret';
+    histEntries.forEach((chord, i) => {
+      if (histCursor === i) histTrack.appendChild(caret);
+      if (i) histTrack.appendChild(document.createTextNode(' '));
+      const item = document.createElement('span');
+      item.className = 'hist-item' + (i ? ' later' : '') +
+        (popIndex === null || popIndex === i ? ' pop' : '');
+      item.textContent = chord.name;
+      histTrack.appendChild(item);
+    });
+    if (histCursor === histEntries.length) histTrack.appendChild(caret);
+    hist.classList.toggle('editing', histCursor !== null);
+    hist.setAttribute('aria-label',
+      `Chord progression editor, ${histEntries.length} chords. Click to place the cursor; use left and right arrows to move and Backspace to delete.`);
+  }
+
+  function progressionText(chords, format = 'key') {
+    return chords.map((chord) =>
+      format === 'degree' ? (chord.roman || chord.name) : chord.name).join(' ');
+  }
+
+  function sameProgression(a, b) {
+    return a.length === b.length && a.every((chord, i) =>
+      chord.name === b[i].name && chord.midi === b[i].midi && chord.type === b[i].type &&
+      (chord.roman || chord.name) === (b[i].roman || b[i].name));
+  }
+
+  function saveClearedProgression() {
+    if (!histEntries.length || currentProgressionSaved) return;
+    recoveryProgression = {
+      timestamp: Date.now(),
+      chords: histEntries.map((chord) => ({ ...chord })),
+    };
+    renderArchive();
+    try {
+      localStorage.setItem(HIST_RECOVERY_KEY, JSON.stringify(recoveryProgression));
+    } catch (error) {
+      console.error('Unable to save the recoverable chord progression.', error);
+      showHistStatus('Could not save the recoverable progression in this browser.', true);
+    }
+  }
+
+  function clearHistory() {
+    histClearT = 0;
+    cancelProgressionPlayback();
+    saveClearedProgression();
+    histEntries = [];
+    histCursor = null;
+    hist.classList.remove('editing');
+    histLast = '';
+    histLastT = 0;
+    currentProgressionSaved = false;
+    histActiveT = -1e9;
+    renderHistory(-1);
+    histTrack.style.transition = 'none';
+    histTrack.style.transform = 'translateX(0px)';
+    histTrack.getBoundingClientRect();
+    histTrack.style.transition = '';
+    histTrack.classList.remove('idle-clearing');
+  }
+
+  function cancelProgressionPlayback() {
+    if (!progressionPlayback) return;
+    clearTimeout(progressionPlayback.timer);
+    if (progressionPlayback.handle) progressionPlayback.handle.release();
+    const activeItem = progressionPlayback.items[progressionPlayback.index - 1];
+    if (activeItem) activeItem.classList.remove('active');
+    if (progressionPlayback.button) {
+      progressionPlayback.button.textContent = 'play';
+      progressionPlayback.button.setAttribute('aria-label',
+        progressionPlayback.button === histPlay ? 'Play current progression' : 'Play this progression');
+    }
+    progressionPlayback = null;
+    hist.classList.remove('playing');
+  }
+
+  function startProgressionPlayback(chords, items, button) {
+    cancelProgressionPlayback();
+    audio();
+    stopPlaying();
+    finishClickPreview();
+    finishRightPreview(false);
+    setLatchedChordPlaying(false);
+    if (held) releaseHold(true);
+    const state = {
+      chords: chords.map((chord) => ({ ...chord })),
+      items: items || [],
+      button: button || null,
+      index: 0,
+      handle: null,
+      timer: 0,
+    };
+    progressionPlayback = state;
+    hist.classList.add('playing');
+    if (button) {
+      button.textContent = 'stop';
+      button.setAttribute('aria-label',
+        button === histPlay ? 'Stop current progression playback' : 'Stop this progression');
+    }
+
+    function advance() {
+      if (progressionPlayback !== state) return;
+      if (state.handle) {
+        state.handle.release();
+        state.handle = null;
+      }
+      const previousItem = state.items[state.index - 1];
+      if (previousItem) {
+        previousItem.classList.remove('active');
+      }
+      if (state.index >= state.chords.length) {
+        progressionPlayback = null;
+        hist.classList.remove('playing');
+        if (!state.button) {
+          showHistStatus('Progression playback finished.');
+        } else {
+          state.button.textContent = 'play';
+          state.button.setAttribute('aria-label',
+            state.button === histPlay ? 'Play current progression' : 'Play this progression');
+        }
+        return;
+      }
+      const chord = state.chords[state.index++];
+      state.handle = startChord(chord.midi, chord.type, masterVol);
+      const activeItem = state.items[state.index - 1];
+      if (activeItem) activeItem.classList.add('active');
+      state.timer = setTimeout(advance, PLAY_BEAT_MS);
+    }
+
+    advance();
+  }
+
+  function playProgression() {
+    if (progressionPlayback) {
+      cancelProgressionPlayback();
+      showHistStatus('Progression playback stopped.');
+      return;
+    }
+    if (!histEntries.length) {
+      showHistStatus('Play some chords before starting playback.', true);
+      return;
+    }
+    startProgressionPlayback(histEntries, Array.from(histTrack.querySelectorAll('.hist-item')), histPlay);
+  }
+
+  function beginHistoryClear(now) {
+    if (histClearT || !histEntries.length || isHistoryInteracting()) return;
+    if (now - histActiveT <= HIST_IDLE_MS) return;
+    histTrack.classList.add('idle-clearing');
+    histClearT = setTimeout(clearHistory, HIST_CLEAR_ANIM_MS);
+  }
+
+  function pushHistory(chord, force = false) {
+    const now = performance.now();
+    cancelProgressionPlayback();
+    cancelHistoryClear();
+    histActiveT = now;
+
+    /* Ignore an immediate duplicate retrigger, not a repeated chord later. */
+    if (!force && histCursor === null && chord.name === histLast && now - histLastT < 400) {
+      histLastT = now;
+      return;
+    }
+    histLast  = chord.name;
+    histLastT = now;
+
+    const entry = {
+      name: chord.name,
+      midi: chord.midi,
+      type: chord.type,
+      roman: chord.roman,
+    };
+    currentProgressionSaved = false;
+    const insertAt = histCursor === null ? histEntries.length : histCursor;
+    histEntries.splice(insertAt, 0, entry);
+    if (histCursor !== null) {
+      histCursor = insertAt + 1;
+    }
+    renderHistory(insertAt);
+  }
+
+  function placeHistoryCursor(clientX) {
+    const items = Array.from(histTrack.querySelectorAll('.hist-item'));
+    histCursor = items.findIndex((item) => {
+      const rect = item.getBoundingClientRect();
+      return clientX < rect.left + rect.width / 2;
+    });
+    if (histCursor < 0) histCursor = histEntries.length;
+    cancelProgressionPlayback();
+    cancelHistoryClear();
+    histActiveT = performance.now();
+    renderHistory(-1);
+    hist.focus({ preventScroll: true });
+  }
+
+  function editHistoryFromKey(event) {
+    if (histCursor === null || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      histCursor = null;
+      histLast = '';
+      histLastT = 0;
+      histActiveT = performance.now();
+      renderHistory(-1);
+    } else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+      event.preventDefault();
+      const step = event.key === 'ArrowLeft' ? -1 : 1;
+      histCursor = Math.max(0, Math.min(histEntries.length, histCursor + step));
+      histActiveT = performance.now();
+      renderHistory(-1);
+    } else if (event.key === 'Backspace' && histCursor > 0) {
+      event.preventDefault();
+      cancelProgressionPlayback();
+      cancelHistoryClear();
+      histEntries.splice(histCursor - 1, 1);
+      histCursor--;
+      currentProgressionSaved = false;
+      histLast = '';
+      histLastT = 0;
+      histActiveT = performance.now();
+      renderHistory(-1);
+    } else if (event.key === 'Backspace') {
+      event.preventDefault();
+    }
+  }
+
+  function logChord(el, k) {
+    pushHistory(targetsFor(el)[k]);
+  }
+
+  function restoreProgression(progression, isSaved) {
+    cancelHistoryClear();
+    cancelProgressionPlayback();
+    histEntries = progression.chords.map((chord) => ({ ...chord }));
+    histCursor = null;
+    histLast = '';
+    histLastT = 0;
+    currentProgressionSaved = isSaved;
+    histActiveT = performance.now();
+    renderHistory();
+    closeArchive();
+    showHistStatus('Progression restored.');
+  }
+
+  function appendArchiveEntry(progression, label, isSaved) {
+    const row = document.createElement('div');
+    row.className = 'hist-entry';
+    const date = document.createElement('span');
+    date.className = 'hist-entry-date';
+    date.textContent = label + ' · ' + new Date(progression.timestamp).toLocaleString();
+    const actions = document.createElement('span');
+    actions.className = 'hist-entry-actions';
+    const load = document.createElement('button');
+    load.className = 'hist-entry-action';
+    load.type = 'button';
+    load.textContent = 'load';
+    load.setAttribute('aria-label', 'Load this progression');
+    load.addEventListener('click', () => restoreProgression(progression, isSaved));
+    const play = document.createElement('button');
+    play.className = 'hist-entry-action';
+    play.type = 'button';
+    play.textContent = 'play';
+    play.setAttribute('aria-label', 'Play this progression');
+    play.addEventListener('click', () => {
+      if (progressionPlayback && progressionPlayback.button === play) {
+        cancelProgressionPlayback();
+        return;
+      }
+      const chordItems = Array.from(chords.querySelectorAll('.hist-item'));
+      startProgressionPlayback(progression.chords, chordItems, play);
+    });
+    const remove = document.createElement('button');
+    remove.className = 'hist-entry-action';
+    remove.type = 'button';
+    remove.textContent = 'delete';
+    remove.setAttribute('aria-label', 'Delete this progression from history');
+    remove.addEventListener('click', () => deleteArchiveEntry(progression, isSaved));
+    actions.append(load, play, remove);
+    const head = document.createElement('div');
+    head.className = 'hist-entry-head';
+    head.append(date, actions);
+    const chords = document.createElement('button');
+    chords.className = 'hist-entry-chords';
+    chords.type = 'button';
+    chords.setAttribute('aria-label', 'Restore progression: ' + progressionText(progression.chords));
+    progression.chords.forEach((chord, index) => {
+      if (index) chords.appendChild(document.createTextNode(' '));
+      const item = document.createElement('span');
+      item.className = 'hist-item';
+      item.textContent = chord.name;
+      chords.appendChild(item);
+    });
+    chords.addEventListener('click', () => restoreProgression(progression, isSaved));
+    row.append(head, chords);
+    histPopover.appendChild(row);
+  }
+
+  function deleteArchiveEntry(progression, isSaved) {
+    if (isSaved) {
+      const index = savedProgressions.indexOf(progression);
+      if (index < 0) return;
+      const nextSaved = savedProgressions.filter((_, i) => i !== index);
+      try {
+        localStorage.setItem(HIST_STORAGE_KEY, JSON.stringify(nextSaved));
+      } catch (error) {
+        console.error('Unable to delete saved chord progression.', error);
+        showHistStatus('Could not delete the saved progression.', true);
+        return;
+      }
+      savedProgressions = nextSaved;
+    } else {
+      try {
+        localStorage.removeItem(HIST_RECOVERY_KEY);
+      } catch (error) {
+        console.error('Unable to delete recoverable chord progression.', error);
+        showHistStatus('Could not delete the recoverable progression.', true);
+        return;
+      }
+      recoveryProgression = null;
+    }
+    if (progressionPlayback && sameProgression(progressionPlayback.chords, progression.chords)) {
+      cancelProgressionPlayback();
+    }
+    renderArchive();
+  }
+
+  function clearArchive() {
+    try {
+      localStorage.setItem(HIST_STORAGE_KEY, '[]');
+      localStorage.removeItem(HIST_RECOVERY_KEY);
+    } catch (error) {
+      console.error('Unable to clear saved progression history.', error);
+      showHistStatus('Could not clear all saved progressions.', true);
+      loadArchive();
+      return;
+    }
+    savedProgressions = [];
+    recoveryProgression = null;
+    if (progressionPlayback && progressionPlayback.button) cancelProgressionPlayback();
+    renderArchive();
+    showHistStatus('Saved progression history cleared.');
+  }
+
+  function positionArchivePopover() {
+    if (histPopover.hidden) return;
+    const rect = histBar.getBoundingClientRect();
+    const below = window.innerHeight - rect.bottom - 8;
+    const above = rect.top - 8;
+    const preferBelow = below >= Math.min(220, window.innerHeight * 0.4) || below >= above;
+    histPopover.style.left = '50%';
+    histPopover.style.maxHeight = Math.max(0, preferBelow ? below : above) + 'px';
+    if (preferBelow) {
+      histPopover.style.top = (rect.bottom + 8) + 'px';
+      histPopover.style.bottom = 'auto';
+    } else {
+      histPopover.style.top = 'auto';
+      histPopover.style.bottom = (window.innerHeight - rect.top + 8) + 'px';
+    }
+  }
+
+  function renderArchive() {
+    histPopover.textContent = '';
+    const clearAll = document.createElement('button');
+    clearAll.className = 'hist-clear-all';
+    clearAll.type = 'button';
+    clearAll.textContent = 'clear all';
+    clearAll.disabled = !recoveryProgression && !savedProgressions.length;
+    clearAll.addEventListener('click', clearArchive);
+    histPopover.appendChild(clearAll);
+
+    if (recoveryProgression) {
+      appendArchiveEntry(recoveryProgression, 'Recoverable', false);
+    }
+    if (savedProgressions.length) {
+      const heading = document.createElement('div');
+      heading.className = 'hist-entry-date hist-section-title';
+      heading.textContent = 'Saved progressions';
+      histPopover.appendChild(heading);
+    }
+    savedProgressions.forEach((progression) => {
+      appendArchiveEntry(progression, 'Saved', true);
+    });
+    if (!recoveryProgression && !savedProgressions.length) {
+      const empty = document.createElement('div');
+      empty.className = 'hist-entry hist-entry-date';
+      empty.textContent = 'No saved progressions';
+      histPopover.appendChild(empty);
+    }
+  }
+
+  function saveCurrentProgression() {
+    if (!histEntries.length) {
+      showHistStatus('Play some chords before saving.', true);
+      return;
+    }
+    if (currentProgressionSaved) {
+      showHistStatus('This progression is already saved.');
+      return;
+    }
+
+    const saved = {
+      timestamp: Date.now(),
+      chords: histEntries.map((chord) => ({ ...chord })),
+    };
+    const nextSaved = [saved, ...savedProgressions].slice(0, SAVED_HIST_MAX);
+    try {
+      localStorage.setItem(HIST_STORAGE_KEY, JSON.stringify(nextSaved));
+      savedProgressions = nextSaved;
+    } catch (error) {
+      console.error('Unable to save chord progression.', error);
+      showHistStatus('Could not save the progression in this browser.', true);
+      return;
+    }
+
+    currentProgressionSaved = true;
+    let recoveryRemoved = true;
+    if (recoveryProgression && sameProgression(recoveryProgression.chords, histEntries)) {
+      try {
+        localStorage.removeItem(HIST_RECOVERY_KEY);
+        recoveryProgression = null;
+      } catch (error) {
+        recoveryRemoved = false;
+        console.error('Unable to remove the redundant recoverable progression.', error);
+        showHistStatus('Saved the progression, but its recovery copy could not be removed.', true);
+      }
+    }
+    renderArchive();
+    if (recoveryRemoved) showHistStatus('Progression saved.');
+  }
+
+  function isValidProgression(progression) {
+    return progression && Number.isFinite(progression.timestamp) &&
+      Array.isArray(progression.chords) && progression.chords.length > 0 &&
+      progression.chords.every((chord) =>
+        chord && typeof chord.name === 'string' &&
+        Number.isInteger(chord.midi) && chord.midi >= 0 && chord.midi <= 127 &&
+        Object.prototype.hasOwnProperty.call(CHORD_TYPES, chord.type) &&
+        (chord.roman === undefined || typeof chord.roman === 'string'));
+  }
+
+  function loadArchive() {
+    try {
+      const stored = JSON.parse(localStorage.getItem(HIST_STORAGE_KEY) || '[]');
+      if (!Array.isArray(stored)) throw new TypeError('Saved progression history is not a list.');
+      savedProgressions = stored.filter(isValidProgression).slice(0, SAVED_HIST_MAX);
+      const recovery = JSON.parse(localStorage.getItem(HIST_RECOVERY_KEY) || 'null');
+      recoveryProgression = isValidProgression(recovery) ? recovery : null;
+    } catch (error) {
+      console.error('Unable to load chord progression history.', error);
+      savedProgressions = [];
+      recoveryProgression = null;
+      showHistStatus('Could not load saved progression history in this browser.', true);
+    }
+    renderArchive();
+  }
+
+  function encodeVariableLength(value) {
+    let buffer = value & 0x7f;
+    const bytes = [];
+    while ((value >>= 7)) {
+      buffer <<= 8;
+      buffer |= (value & 0x7f) | 0x80;
+    }
+    while (true) {
+      bytes.push(buffer & 0xff);
+      if (buffer & 0x80) buffer >>= 8;
+      else break;
+    }
+    return bytes;
+  }
+
+  function exportMidi() {
+    if (!histEntries.length) {
+      showHistStatus('Play some chords before exporting.', true);
+      return;
+    }
+
+    let url = '';
+    try {
+      const ticksPerBeat = 480;
+      const ticksPerChord = ticksPerBeat * 4;
+      const events = [];
+      histEntries.forEach((chord, index) => {
+        const start = index * ticksPerChord;
+        const end = start + ticksPerChord;
+        const pitches = [chord.midi - 12, ...CHORD_TYPES[chord.type].map((n) => chord.midi + n)];
+        pitches.forEach((pitch) => {
+          const note = clamp(pitch, 0, 127);
+          events.push({ tick: start, order: 1, bytes: [0x90, note, 88] });
+          events.push({ tick: end, order: 0, bytes: [0x80, note, 64] });
+        });
+      });
+      events.sort((a, b) => a.tick - b.tick || a.order - b.order);
+
+      const track = [
+        0x00, 0xff, 0x51, 0x03, 0x07, 0xa1, 0x20,
+        0x00, 0xff, 0x58, 0x04, 0x04, 0x02, 0x18, 0x08,
+        0x00, 0xc0, 0x00,
+      ];
+      let lastTick = 0;
+      events.forEach((event) => {
+        track.push(...encodeVariableLength(event.tick - lastTick), ...event.bytes);
+        lastTick = event.tick;
+      });
+      track.push(...encodeVariableLength(histEntries.length * ticksPerChord - lastTick), 0xff, 0x2f, 0x00);
+
+      const header = [
+        0x4d, 0x54, 0x68, 0x64, 0x00, 0x00, 0x00, 0x06,
+        0x00, 0x00, 0x00, 0x01, 0x01, 0xe0,
+        0x4d, 0x54, 0x72, 0x6b,
+        (track.length >>> 24) & 0xff, (track.length >>> 16) & 0xff,
+        (track.length >>> 8) & 0xff, track.length & 0xff,
+      ];
+      const blob = new Blob([new Uint8Array([...header, ...track])], { type: 'audio/midi' });
+      url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'chord-progression.mid';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      const downloadUrl = url;
+      setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+      url = '';
+      showHistStatus('MIDI progression exported at 120 BPM.');
+    } catch (error) {
+      if (url) URL.revokeObjectURL(url);
+      console.error('Unable to export chord progression as MIDI.', error);
+      showHistStatus('Could not export the progression as MIDI.', true);
+    }
+  }
+
+  function encodeWav(audioBuffer) {
+    const channelCount = audioBuffer.numberOfChannels;
+    const sampleRate = audioBuffer.sampleRate;
+    const frameCount = audioBuffer.length;
+    const bytesPerSample = 2;
+    const dataSize = frameCount * channelCount * bytesPerSample;
+    const wav = new ArrayBuffer(44 + dataSize);
+    const view = new DataView(wav);
+    const writeText = (offset, text) => {
+      for (let i = 0; i < text.length; i++) view.setUint8(offset + i, text.charCodeAt(i));
+    };
+
+    writeText(0, 'RIFF');
+    view.setUint32(4, 36 + dataSize, true);
+    writeText(8, 'WAVE');
+    writeText(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, channelCount, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * channelCount * bytesPerSample, true);
+    view.setUint16(32, channelCount * bytesPerSample, true);
+    view.setUint16(34, bytesPerSample * 8, true);
+    writeText(36, 'data');
+    view.setUint32(40, dataSize, true);
+
+    const channels = Array.from({ length: channelCount }, (_, i) => audioBuffer.getChannelData(i));
+    let offset = 44;
+    for (let frame = 0; frame < frameCount; frame++) {
+      for (let channel = 0; channel < channelCount; channel++) {
+        const sample = clamp(channels[channel][frame], -1, 1);
+        view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true);
+        offset += bytesPerSample;
+      }
+    }
+    return wav;
+  }
+
+  async function exportWav() {
+    if (!histEntries.length) {
+      showHistStatus('Play some chords before exporting.', true);
+      return;
+    }
+    const OfflineContext = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (!OfflineContext) {
+      showHistStatus('WAV export is not supported by this browser.', true);
+      return;
+    }
+
+    try {
+      const chords = histEntries.map((chord) => ({ ...chord }));
+      const sampleRate = 44100;
+      const secondsPerChord = 2;
+      const releaseSeconds = 0.16;
+      const duration = chords.length * secondsPerChord;
+      const context = new OfflineContext(2, Math.ceil(duration * sampleRate), sampleRate);
+      const compressor = context.createDynamicsCompressor();
+      compressor.threshold.value = -6;
+      compressor.knee.value = 6;
+      compressor.ratio.value = 12;
+      compressor.attack.value = 0.003;
+      compressor.release.value = 0.1;
+      compressor.connect(context.destination);
+
+      chords.forEach((chord, index) => {
+        const start = index * secondsPerChord;
+        const end = start + secondsPerChord;
+        const intervals = CHORD_TYPES[chord.type];
+        const parts = [{ semitones: -12, weight: 0.45 },
+          ...intervals.map((semitones, i) => ({
+            semitones,
+            weight: [1, 0.85, 0.75, 0.65][i],
+          }))];
+        const totalWeight = parts.reduce((sum, part) => sum + part.weight, 0);
+
+        parts.forEach((part) => {
+          const oscillator = context.createOscillator();
+          oscillator.type = 'sine';
+          oscillator.frequency.value = 440 * Math.pow(2, (chord.midi + part.semitones - 69) / 12);
+          const gain = context.createGain();
+          const peak = 0.55 * 0.8 * 0.8 * part.weight / totalWeight;
+          gain.gain.setValueAtTime(0.0001, start);
+          gain.gain.linearRampToValueAtTime(peak, start + 0.025);
+          gain.gain.setValueAtTime(peak, end - releaseSeconds);
+          gain.gain.exponentialRampToValueAtTime(0.0001, end);
+          oscillator.connect(gain).connect(compressor);
+          oscillator.start(start);
+          oscillator.stop(end);
+        });
+      });
+
+      const rendered = await context.startRendering();
+      const wav = encodeWav(rendered);
+      const url = URL.createObjectURL(new Blob([wav], { type: 'audio/wav' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'chord-progression.wav';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showHistStatus('WAV progression exported at 120 BPM.');
+    } catch (error) {
+      console.error('Unable to render chord progression as WAV.', error);
+      showHistStatus('Could not render the progression as WAV audio.', true);
+    }
+  }
+
+  function closeExportMenu() {
+    histExportWrap.classList.remove('open');
+    histExport.setAttribute('aria-expanded', 'false');
+  }
+
+  function closeCopyMenu() {
+    histCopyWrap.classList.remove('open');
+    histCopy.setAttribute('aria-expanded', 'false');
+  }
+
+  async function copyProgression(format) {
+    if (!histEntries.length) {
+      showHistStatus('Play some chords before copying.', true);
+      closeCopyMenu();
+      return;
+    }
+    const text = progressionText(histEntries, format);
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const field = document.createElement('textarea');
+        field.value = text;
+        field.setAttribute('readonly', '');
+        field.style.position = 'fixed';
+        field.style.opacity = '0';
+        document.body.appendChild(field);
+        let copied;
+        try {
+          field.select();
+          copied = document.execCommand('copy');
+        } finally {
+          field.remove();
+        }
+        if (!copied) throw new Error('The browser rejected the copy command.');
+      }
+      showHistStatus(format === 'degree'
+        ? 'Progression copied as scale degrees.'
+        : 'Progression copied as chord names.');
+    } catch (error) {
+      console.error('Unable to copy chord progression.', error);
+      showHistStatus('Could not copy the progression to the clipboard.', true);
+    }
+  }
+
+  histClear.addEventListener('click', clearHistory);
+  histCopy.addEventListener('click', () => {
+    const opening = !histCopyWrap.classList.contains('open');
+    histCopyWrap.classList.toggle('open', opening);
+    histCopy.setAttribute('aria-expanded', String(opening));
+    if (opening) closeExportMenu();
+  });
+  histCopyKey.addEventListener('click', () => {
+    closeCopyMenu();
+    copyProgression('key');
+  });
+  histCopyDegree.addEventListener('click', () => {
+    closeCopyMenu();
+    copyProgression('degree');
+  });
+  histExport.addEventListener('click', () => {
+    const opening = !histExportWrap.classList.contains('open');
+    histExportWrap.classList.toggle('open', opening);
+    histExport.setAttribute('aria-expanded', String(opening));
+    if (opening) closeCopyMenu();
+  });
+  histExportMidi.addEventListener('click', () => {
+    closeExportMenu();
+    exportMidi();
+  });
+  histExportWav.addEventListener('click', () => {
+    closeExportMenu();
+    exportWav();
+  });
+  histSave.addEventListener('click', saveCurrentProgression);
+  histArchive.addEventListener('click', () => {
+    const opening = histPopover.hidden;
+    histPopover.hidden = !opening;
+    histBar.classList.toggle('tools-open', opening);
+    histArchive.setAttribute('aria-expanded', String(opening));
+    if (opening) {
+      renderArchive();
+      positionArchivePopover();
+    }
+    else if (histEntries.length) histActiveT = performance.now();
+  });
+  histPlay.addEventListener('click', playProgression);
+  histEntryMode.addEventListener('click', () => {
+    const useLatchMode = entryMode !== 'latch';
+    finishRightPreview(false);
+    clearLatchedChord();
+    stopPlaying();
+    if (held) releaseHold(true);
+    pending = null;
+    entryMode = useLatchMode ? 'latch' : 'hover';
+    activeNotePlaybackEnabled = useLatchMode;
+    histEntryMode.textContent = useLatchMode ? 'entry: click' : 'entry: hover';
+    histEntryMode.setAttribute('aria-pressed', String(useLatchMode));
+    histEntryMode.setAttribute('aria-label', useLatchMode
+      ? 'Switch to hover-to-play entry mode'
+      : 'Switch to click-to-add entry mode');
+    showHistStatus(useLatchMode
+      ? 'Click-to-add mode: click a chord to add it; middle-click toggles active-note playback, and right-click previews.'
+      : 'Hover-to-play mode enabled.');
+    if (useLatchMode) showPlaybackIndicator(true);
+  });
+
+  histBar.addEventListener('pointerenter', (event) => {
+    if (event.pointerType === 'touch') return;
+    histHover = true;
+    cancelHistoryClear();
+    if (histEntries.length) histActiveT = performance.now();
+  });
+  hist.addEventListener('click', (event) => placeHistoryCursor(event.clientX));
+  window.addEventListener('keydown', (event) => {
+    if (event.code === 'Space' && !event.repeat) {
+      event.preventDefault();
+      event.stopPropagation();
+      if (progressionPlayback) {
+        cancelProgressionPlayback();
+      } else {
+        playProgression();
+      }
+      return;
+    }
+    const target = event.target;
+    if (target && target.closest &&
+        target.closest('button, input, textarea, select, [contenteditable="true"]')) return;
+    if (histCursor === null) return;
+    editHistoryFromKey(event);
+  });
+  histBar.addEventListener('pointerdown', (event) => {
+    cancelHistoryClear();
+    if (histEntries.length) histActiveT = performance.now();
+    if (event.pointerType === 'touch') {
+      histHover = true;
+      histBar.classList.add('tools-open');
+    }
+  });
+  histBar.addEventListener('pointerleave', () => {
+    histHover = false;
+    if (histEntries.length) histActiveT = performance.now();
+  });
+  histBar.addEventListener('focusin', () => {
+    histFocus = true;
+    cancelHistoryClear();
+    if (histEntries.length) histActiveT = performance.now();
+  });
+  histBar.addEventListener('focusout', () => {
+    setTimeout(() => {
+      histFocus = histBar.contains(document.activeElement);
+      if (!histFocus && histEntries.length) histActiveT = performance.now();
+    }, 0);
+  });
+  window.addEventListener('pointerdown', (event) => {
+    if (!histBar.contains(event.target)) {
+      closeArchive();
+      closeExportMenu();
+      closeCopyMenu();
+      histBar.classList.remove('tools-open');
+    }
+  });
+  window.addEventListener('pointerup', (event) => {
+    if (event.pointerType === 'touch') {
+      histHover = false;
+      if (histEntries.length) histActiveT = performance.now();
+    }
+  });
+  window.addEventListener('pointercancel', (event) => {
+    if (event.pointerType === 'touch') {
+      histHover = false;
+      if (histEntries.length) histActiveT = performance.now();
+    }
+  });
+  window.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && histExportWrap.classList.contains('open')) {
+      closeExportMenu();
+      histExport.focus();
+    }
+    if (event.key === 'Escape' && histCopyWrap.classList.contains('open')) {
+      closeCopyMenu();
+      histCopy.focus();
+    }
+    if (event.key === 'Escape' && !histPopover.hidden) {
+      closeArchive();
+      histArchive.focus();
+    }
+  });
+  window.addEventListener('resize', positionArchivePopover);
+  window.addEventListener('blur', () => {
+    histHover = false;
+    if (histEntries.length) histActiveT = performance.now();
+  });
+
+  loadArchive();
+
+  /* ---------- pointer tracking with velocity ---------- */
+
+  window.addEventListener('pointermove', (e) => {
+    dragPt.x = e.clientX;
+    dragPt.y = e.clientY;
+    if (e.pointerType === 'touch') return;
+    const now = performance.now();
+    if (lastMoveT) {
+      const dt = Math.max(1, now - lastMoveT);
+      const nvx = (e.clientX - lastMoveX) / dt * 1000;
+      const nvy = (e.clientY - lastMoveY) / dt * 1000;
+      const a = 0.35;
+      pvx += (nvx - pvx) * a;
+      pvy += (nvy - pvy) * a;
+    }
+    lastMoveX = e.clientX;
+    lastMoveY = e.clientY;
+    lastMoveT = now;
+    pointer.x = e.clientX;
+    pointer.y = e.clientY;
+    pointer.active = true;
+  }, { passive: true });
+
+  window.addEventListener('pointerdown', onPointerDown);
+  window.addEventListener('pointerup', onPointerUp);
+  window.addEventListener('pointercancel', (event) => {
+    finishClickPreview(event);
+    finishRightPreview(true, event);
+    releaseHold(true);
+  });
+  window.addEventListener('contextmenu', (event) => {
+    if (entryMode !== 'latch') return;
+    if (event.target && event.target.closest &&
+        event.target.closest('.histbar, .mode-wheel, .arrow')) return;
+    event.preventDefault();
+  });
+
+  window.addEventListener('mouseout', (e) => {
+    if (!e.relatedTarget) pointer.active = false;
+  });
+
+  window.addEventListener('blur', () => {
+    pointer.active = false;
+    finishClickPreview();
+    finishRightPreview();
+    releaseHold();
+  });
+
+  /* ---------- animation loop ---------- */
+
+  function tick(now) {
+    requestAnimationFrame(tick);
+
+    const dt = lastT ? Math.min(64, now - lastT) : 16;
+    lastT = now;
+
+    if (lastMoveT && now - lastMoveT > 60) {
+      const decay = Math.exp(-dt / 120);
+      pvx *= decay;
+      pvy *= decay;
+    }
+
+    /* smooth per-note bubble metrics */
+    const kBlob = 1 - Math.exp(-dt / 160);
+    for (let i = 0; i < noteEls.length; i++) {
+      const b = noteEls[i]._blob;
+      if (!b) continue;
+      b.x += (b.tx - b.x) * kBlob;
+      b.y += (b.ty - b.y) * kBlob;
+      b.r += (b.tr - b.r) * kBlob;
+    }
+
+    /* cursor point, led by velocity */
+    let px = pointer.x + pvx * LEAD;
+    let py = pointer.y + pvy * LEAD;
+    {
+      const lx = px - pointer.x, ly = py - pointer.y;
+      const ll = Math.hypot(lx, ly);
+      if (ll > MAX_LEAD) {
+        const s = MAX_LEAD / ll;
+        px = pointer.x + lx * s;
+        py = pointer.y + ly * s;
+      }
+    }
+
+    /* nearest + refresh measurements for the notes whose bubble we
+       actually draw. This is what keeps the blob aligned while a note
+       is mid-slide or mid-vertical-shift. */
+    const nearAll = nearestNote(null);
+    if (nearAll) measureNoteBlob(nearAll.el);
+    if (held && held.el && !held.el._dying) measureNoteBlob(held.el);
+    if (latchedChord && !latchedChord.el._dying) measureNoteBlob(latchedChord.el);
+    if (clickPreview && !clickPreview.el._dying) measureNoteBlob(clickPreview.el);
+    if (rightPreview && !rightPreview.el._dying) measureNoteBlob(rightPreview.el);
+
+    computeSel();
+    updateAudio();
+    syncPlayingClass();
+    drawTargets(dt);
+
+    if (held || playing || latchedChord || clickPreview || rightPreview || progressionPlayback) histActiveT = now;
+    beginHistoryClear(now);
+
+    /* ---------------- solid layer (held or latched chord) ---------------- */
+    let solidTarget = 0;
+
+    const solidChord = rightPreview && !rightPreview.el._dying
+      ? rightPreview
+      : clickPreview && !clickPreview.el._dying
+        ? { ...latchedChord, el: clickPreview.el, handle: clickPreview.handle }
+        : held && !held.el._dying
+          ? held
+          : latchedChord && !latchedChord.el._dying ? latchedChord : null;
+
+    if (solidChord && solidChord.el._blob && pointer.active) {
+      const el = solidChord.el;
+      if (!el._dying && el._blob) {
+        const r  = el.getBoundingClientRect();
+        let hx = r.left + r.width / 2  + el._blob.x;
+        let hy = r.top  + r.height / 2 + el._blob.y;
+        let hr = el._blob.r;
+
+        /* Target chords anchor the solid blob to their drawn label. */
+        const lb = solidChord.target > 0 ? targetBlob(el, solidChord.target) : null;
+        if (lb) { hx = lb.x; hy = lb.y; hr = lb.r; }
+
+        if (!solid.init) {
+          solid.x = hx; solid.y = hy; solid.r = hr;
+          solid.init = true;
+        } else {
+          const k = 1 - Math.exp(-dt / 120);
+          solid.x += (hx - solid.x) * k;
+          solid.y += (hy - solid.y) * k;
+          solid.r += (hr - solid.r) * k;
+        }
+        solidTarget = 1;
+      }
+    }
+
+    solid.alpha += (solidTarget - solid.alpha) * (1 - Math.exp(-dt / 120));
+    if (solid.alpha < 0.004) solid.alpha = 0;
+
+    let solidDissolve = 0;
+    if (solid.alpha > 0 && solid.init) {
+      const cursor = pointer.active
+        ? pointOnChordAreaRay(solid.x, solid.y, px, py)
+        : { x: solid.x, y: solid.y, outsideDistance: 0 };
+      solidDissolve = clamp(cursor.outsideDistance / 120, 0, 1);
+      drawBlob(
+        solidPath,
+        solid,
+        cursor.x,
+        cursor.y,
+        now
+      );
+    }
+    solidPath.style.opacity = (solid.alpha * (1 - solidDissolve)).toFixed(3);
+    solidPath.style.strokeDasharray = solidDissolve > 0
+      ? (2 - solidDissolve).toFixed(1) + ' ' + (3 + solidDissolve * 8).toFixed(1)
+      : 'none';
+
+    /* ---------------- dashed layer (nearest chord) ---------------- */
+    let dashedTarget = null;
+    if (tSel.el && tSel.k > 0) {
+      /* a target line is selected: the blob's chord side moves up to it
+         (unless it's already the solid, held one) */
+      const isSolidSel = !!(solidChord &&
+        tSel.el === solidChord.el && tSel.k === solidChord.target);
+      const lb = isSolidSel ? null : targetBlob(tSel.el, tSel.k);
+      if (lb) dashedTarget = { el: tSel.el, bx: lb.x, by: lb.y, r: lb.r };
+    } else if (nearAll && pointer.y <= cutoffY &&
+               (!solidChord || nearAll.el !== solidChord.el || solidChord.target > 0)) {
+      dashedTarget = nearAll;
+    }
+
+    let dashedTargetAlpha = 0;
+    const dashedCursor = dashedTarget && pointer.active
+      ? pointOnChordAreaRay(chord.x, chord.y, px, py)
+      : null;
+    if (dashedTarget && dashedCursor) {
+      const pd = Math.hypot(dashedTarget.bx - dashedCursor.x, dashedTarget.by - dashedCursor.y);
+      const fadeStart = interactDist * 0.85;
+      dashedTargetAlpha = pd <= fadeStart
+        ? 1
+        : clamp((interactDist - pd) / (interactDist - fadeStart), 0, 1);
+    }
+
+    if (dashedTarget) {
+      if (!chord.init || dashedAlpha < 0.02) {
+        chord.x = dashedTarget.bx;
+        chord.y = dashedTarget.by;
+        chord.r = dashedTarget.r;
+        chord.init = true;
+      } else {
+        const k = 1 - Math.exp(-dt / 120);
+        chord.x += (dashedTarget.bx - chord.x) * k;
+        chord.y += (dashedTarget.by - chord.y) * k;
+        chord.r += (dashedTarget.r - chord.r) * k;
+      }
+      chord.el = dashedTarget.el;
+    }
+
+    dashedAlpha += (dashedTargetAlpha - dashedAlpha) * (1 - Math.exp(-dt / FADE_T));
+    if (dashedAlpha < 0.004) dashedAlpha = 0;
+
+    if (dashedAlpha > 0 && chord.init) {
+      drawBlob(
+        dashedPath,
+        chord,
+        dashedCursor ? dashedCursor.x : chord.x,
+        dashedCursor ? dashedCursor.y : chord.y,
+        now
+      );
+    }
+    dashedPath.style.opacity = dashedAlpha.toFixed(3);
+  }
+  requestAnimationFrame(tick);
+
+  /* ================= layout ================= */
+
+  function layout() {
+    const w = window.innerWidth;
+    const modeReserve = Math.min(250, Math.max(112, w * 0.18));
+    const contentWidth = w - modeReserve;
+    const pad = contentWidth < 640 ? 88 : 200;
+    const total = Math.max(200, Math.min(contentWidth - pad, 680));
+    modeRadius = Math.min(112, Math.max(66, modeReserve * 0.45));
+
+    document.documentElement.style.setProperty('--mode-reserve', modeReserve.toFixed(1) + 'px');
+    document.documentElement.style.setProperty('--mode-radius', modeRadius.toFixed(1) + 'px');
+    modeArc.setAttribute('viewBox', `0 0 ${modeRadius} ${modeRadius * 2}`);
+    modeArcPath.setAttribute('d',
+      `M 0 0 A ${modeRadius} ${modeRadius} 0 0 1 0 ${modeRadius * 2}`);
+    updateModeWheel(false);
+
+    slotW    = total / 8;
+    fontSize = Math.max(15, Math.min(46, slotW * 0.6));
+    interactDist = fontSize * 3;
+
+    document.documentElement.style.setProperty('--slotw', slotW.toFixed(2) + 'px');
+    document.documentElement.style.setProperty('--fs',    fontSize.toFixed(2) + 'px');
+    notesEl.style.width = total.toFixed(2) + 'px';
+    cutoffY = histBar.getBoundingClientRect().top - 6;
+
+    for (let i = 0; i < noteEls.length; i++) {
+      const el = noteEls[i];
+      el.style.transform = `translateX(${(i * slotW).toFixed(2)}px)`;
+      if (el._label) measureNoteBlob(el);
+    }
+  }
+
+  /* ================= boot ================= */
+
+  layout();
+  noteEls = scaleData.notes.map((n, i) => {
+    const el = buildNote(n, scaleData.labels[i]);
+    placeNote(el, i);
+    notesEl.appendChild(el);
+    measureNoteBlob(el);
+    return el;
+  });
+
+  prevBtn.addEventListener('click', () => { audio(); shift(true);  });
+  nextBtn.addEventListener('click', () => { audio(); shift(false); });
+
+  modeWheel.addEventListener('pointerdown', (event) => {
+    if (event.button !== undefined && event.button !== 0) return;
+    event.preventDefault();
+    const choice = event.target.closest('.mode-choice');
+    modeDrag = {
+      pointerId: event.pointerId,
+      lastY: event.clientY,
+      lastTime: performance.now(),
+      distance: 0,
+      speed: 0,
+      moved: false,
+      choiceIndex: choice ? Number(choice.dataset.mode) : null,
+    };
+    modeWheel.classList.add('dragging');
+    modeWheel.setPointerCapture(event.pointerId);
+  });
+  modeWheel.addEventListener('pointermove', (event) => {
+    if (!modeDrag || modeDrag.pointerId !== event.pointerId) return;
+    const delta = event.clientY - modeDrag.lastY;
+    const now = performance.now();
+    const elapsed = Math.max(1, now - modeDrag.lastTime);
+    modeDrag.lastY = event.clientY;
+    modeDrag.lastTime = now;
+    const speedPerFrame = Math.abs(delta) / elapsed * 16;
+    modeDrag.speed = modeDrag.speed * 0.65 + speedPerFrame * 0.35;
+
+    if (delta && modeDrag.distance && Math.sign(delta) !== Math.sign(modeDrag.distance)) {
+      modeDrag.distance = 0;
+    }
+    modeDrag.distance += delta;
+    const threshold = Math.min(
+      MODE_DRAG_MAX_STEP,
+      MODE_DRAG_STEP * (1 + modeDrag.speed / MODE_DRAG_SPEED_SCALE)
+    );
+    if (Math.abs(modeDrag.distance) >= threshold) {
+      const direction = modeDrag.distance < 0 ? -1 : 1;
+      modeDrag.distance -= Math.sign(modeDrag.distance) * threshold;
+      modeDrag.moved = true;
+      selectMode(modeIdx + direction);
+    }
+  });
+  function finishModeDrag(event) {
+    if (!modeDrag || (event && modeDrag.pointerId !== event.pointerId)) return;
+    if (event && event.type === 'pointerup' && !modeDrag.moved && modeDrag.choiceIndex !== null) {
+      selectMode(modeDrag.choiceIndex);
+    }
+    suppressModeClick = modeDrag.moved;
+    if (suppressModeClick) setTimeout(() => { suppressModeClick = false; }, 0);
+    modeDrag = null;
+    modeWheel.classList.remove('dragging');
+  }
+  modeWheel.addEventListener('pointerup', finishModeDrag);
+  modeWheel.addEventListener('pointercancel', finishModeDrag);
+  modeWheel.addEventListener('lostpointercapture', finishModeDrag);
+  modeWheel.addEventListener('click', (event) => {
+    if (suppressModeClick) {
+      suppressModeClick = false;
+      event.preventDefault();
+      return;
+    }
+    const choice = event.target.closest('.mode-choice');
+    if (choice) selectMode(Number(choice.dataset.mode));
+  });
+  modeWheel.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+      event.preventDefault();
+      selectMode(modeIdx + (event.key === 'ArrowUp' ? 1 : -1));
+    }
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if (e.defaultPrevented) return;
+    if (e.key === 'ArrowLeft')  { e.preventDefault(); audio(); shift(true);  }
+    if (e.key === 'ArrowRight') { e.preventDefault(); audio(); shift(false); }
+  });
+
+  window.addEventListener('resize', layout);
+})();
+</script>
+</body>
+</html>
