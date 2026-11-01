@@ -31,6 +31,121 @@
     margin-left:0;
   }
 
+  .piano-indicator{
+    position:fixed;
+    top:env(safe-area-inset-top, 0px);
+    left:50%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:0;
+    transform:translateX(-50%);
+    color:rgba(var(--ink),.42);
+    pointer-events:none;
+    z-index:25;
+    opacity:.79;
+    transition:transform .38s cubic-bezier(.2,.8,.3,1);
+  }
+  .piano-indicator.collapsed{transform:translate(-50%,-100%);}
+  .piano-caption{
+    order:1;
+    min-height:1em;
+    font-size:11px;
+    font-weight:350;
+    line-height:1;
+    letter-spacing:.025em;
+    opacity:.72;
+  }
+  .piano-keys{order:0;display:block;width:196px;height:88px;overflow:visible;}
+  .piano-white{
+    fill:rgba(var(--ink),.025);
+    stroke:rgba(var(--ink),.32);
+    stroke-width:1;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+  }
+  .piano-black{
+    fill:rgba(var(--ink),.68);
+    stroke:rgba(var(--ink),.68);
+    stroke-width:1;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+  }
+  .piano-sketch{
+    fill:none;
+    stroke:rgba(var(--ink),.16);
+    stroke-width:.65;
+    stroke-linecap:round;
+  }
+  .piano-white.selected{fill:rgba(var(--ink),.32);}
+  .piano-black.selected{fill:rgba(var(--ink),.42);stroke:rgba(var(--ink),.5);}
+  .piano-white.root{fill:rgb(var(--ink));}
+  .piano-black.root{fill:#8a704d;stroke:#8a704d;}
+  .piano-toggle{
+    position:fixed;
+    top:calc(102px + env(safe-area-inset-top, 0px));
+    left:50%;
+    display:grid;
+    place-items:center;
+    width:24px;
+    height:20px;
+    padding:0;
+    border:0;
+    background:none;
+    color:rgba(var(--ink),.42);
+    opacity:.79;
+    cursor:pointer;
+    z-index:26;
+    transform:translateX(-50%);
+    transition:top .38s cubic-bezier(.2,.8,.3,1),
+      left .38s cubic-bezier(.2,.8,.3,1), color .2s ease, opacity .2s ease;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .piano-toggle:hover,.piano-toggle:focus-visible{color:rgb(var(--ink));opacity:1;}
+  .piano-toggle:focus{outline:none;}
+  .piano-toggle:focus-visible{outline:1px solid rgba(var(--ink),.4);outline-offset:1px;}
+  .piano-toggle svg{
+    width:12px;
+    height:8px;
+    fill:none;
+    stroke:currentColor;
+    stroke-width:1.5;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+    transition:transform .38s cubic-bezier(.2,.8,.3,1);
+  }
+  .piano-toggle svg{transform:rotate(180deg);}
+  .piano-toggle.collapsed{
+    top:calc(4px + env(safe-area-inset-top, 0px));
+    left:50%;
+  }
+  .piano-toggle.collapsed svg{transform:rotate(0);}
+  @media (prefers-reduced-motion:reduce){
+    .piano-indicator,.piano-toggle,.piano-toggle svg{transition-duration:.01ms;}
+  }
+  .inversion-indicator{
+    position:fixed;
+    top:50%;
+    right:calc(12px + var(--mode-radius, 100px));
+    transform:translateY(-50%);
+    color:rgba(var(--ink),.72);
+    font-size:13px;
+    font-weight:300;
+    text-align:center;
+    opacity:0;
+    pointer-events:none;
+    z-index:28;
+    transition:opacity .22s ease;
+  }
+  .inversion-indicator.visible{opacity:1;}
+  .inversion-options{display:flex;flex-direction:column;align-items:center;gap:10px;}
+  .inversion-label{font-size:9px;font-weight:450;letter-spacing:.08em;opacity:.62;}
+  .inversion-option{line-height:1;opacity:.55;transition:opacity .15s ease,font-weight .15s ease;}
+  .inversion-option.selected{font-weight:700;opacity:1;}
+  @media (prefers-reduced-motion:reduce){
+    .inversion-indicator{transition-duration:.01ms;}
+  }
+
   .mode-wheel{
     position:fixed;
     top:50%;
@@ -77,6 +192,7 @@
     -webkit-tap-highlight-color:transparent;
     transition:transform .22s cubic-bezier(.2,.8,.3,1), opacity .2s ease, font-weight .2s ease;
   }
+  .mode-wheel:not(.ready) .mode-choice{visibility:hidden;}
   .mode-choice:hover,.mode-choice:focus-visible{opacity:.82;}
   .mode-choice:focus{outline:none;}
   .mode-choice:focus-visible{outline:1px solid rgba(var(--ink),.35);}
@@ -86,6 +202,285 @@
     pointer-events:none;
     visibility:hidden;
     transition:transform .22s cubic-bezier(.2,.8,.3,1), opacity .2s ease, visibility 0s linear .2s;
+  }
+  .mode-picker{
+    position:fixed;
+    top:50%;
+    left:50%;
+    width:min(760px, calc(100vw - 32px));
+    max-height:90vh;
+    overflow-y:auto;
+    padding:clamp(18px, 3vw, 32px);
+    border:1px solid rgba(var(--ink),.15);
+    background:var(--bg);
+    box-shadow:0 12px 40px rgba(var(--ink),.16);
+    transform:translate(-50%,-50%);
+    z-index:32;
+  }
+  .mode-picker-close{
+    position:absolute;
+    top:8px;
+    right:8px;
+    display:grid;
+    place-items:center;
+    width:30px;
+    min-height:30px !important;
+    padding:0 !important;
+    border:0 !important;
+    background:transparent !important;
+    font-size:21px !important;
+    font-weight:300;
+    line-height:1;
+    opacity:.55;
+  }
+  .mode-picker-close:hover,.mode-picker-apply:hover{opacity:1;}
+  .mode-picker-backdrop{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.42);
+    z-index:31;
+  }
+  .mode-picker-backdrop[hidden]{display:none;}
+  .mode-picker[hidden]{display:none;}
+  .mode-picker h2{font-size:clamp(18px,2vw,24px);font-weight:450;}
+  .mode-picker-title-row{
+    position:relative;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .mode-picker-title-row h2{margin:0;}
+  .mode-picker p{margin-top:8px;font-size:13px;line-height:1.5;opacity:.62;}
+  .mode-family-picker{
+    display:grid;
+    grid-template-columns:124px minmax(0,1fr);
+    align-items:center;
+    gap:16px;
+    margin-top:4px;
+  }
+  .mode-cardinality-selector{
+    display:grid;
+    grid-template-columns:28px minmax(0,1fr) 28px;
+    align-items:center;
+    justify-items:center;
+    margin-top:10px;
+  }
+  .mode-picker .mode-cardinality-selector button{
+    display:grid;
+    place-items:center;
+    width:28px;
+    min-height:38px;
+    padding:0;
+    border:0;
+    background:transparent;
+    font-size:20px;
+    opacity:.55;
+  }
+  .mode-picker .mode-cardinality-selector button:hover{opacity:1;}
+  .mode-picker .mode-cardinality-selector button:disabled{
+    cursor:default;
+    opacity:.18;
+  }
+  .mode-picker .mode-cardinality-selector button:focus-visible,
+  .mode-picker .mode-set-arrows button:focus-visible{
+    outline:none;
+    opacity:1;
+  }
+  .mode-cardinality-value{
+    font-size:clamp(34px,5vw,52px);
+    font-weight:300;
+    font-variant-numeric:tabular-nums;
+    line-height:1;
+    text-align:center;
+  }
+  .mode-cardinality-caption{
+    grid-column:1 / -1;
+    margin-top:7px;
+    color:rgba(var(--ink),.4);
+    font-size:10px;
+    font-weight:450;
+    letter-spacing:.18em;
+  }
+  .mode-family-chart{
+    display:block;
+    width:100%;
+    height:clamp(240px, 34vh, 360px);
+    min-width:0;
+    margin-top:0;
+    overflow:visible;
+  }
+  .mode-family-axis{stroke:rgba(var(--ink),.2);stroke-width:1;}
+  .mode-family-grid{stroke:rgba(var(--ink),.08);stroke-width:1;}
+  .mode-family-tick{fill:rgb(var(--ink));font:7px sans-serif;opacity:.55;}
+  .mode-family-curve{fill:none;stroke-width:1.6;opacity:.46;transition:opacity .15s,stroke-width .15s;}
+  .mode-family-curve.selected{stroke-width:3;opacity:1;}
+  .mode-family-hit{fill:none;stroke:transparent;stroke-width:14;cursor:pointer;pointer-events:stroke;}
+  .mode-family-points{fill:var(--bg);stroke-width:1.4;pointer-events:none;}
+  .mode-picker button:focus-visible{
+    outline:1px solid rgba(var(--ink),.45);
+    outline-offset:2px;
+  }
+  .mode-set-selector{
+    display:grid;
+    grid-template-columns:38px minmax(0,1fr) 38px;
+    align-items:center;
+    gap:12px;
+    margin-top:0;
+  }
+  .mode-set-arrows{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    transform:translateY(13px);
+  }
+  .mode-picker .mode-set-arrows button{
+    display:grid;
+    place-items:center;
+    min-height:30px;
+    padding:0;
+    border:0;
+    background:transparent;
+    font-size:17px;
+    line-height:1;
+    opacity:.7;
+  }
+  .mode-picker .mode-set-arrows button:hover{opacity:1;}
+  .mode-set-display{
+    display:grid;
+    grid-template-columns:repeat(12,minmax(0,1fr));
+    align-items:end;
+    width:100%;
+    min-height:48px;
+    touch-action:none;
+    user-select:none;
+  }
+  .mode-set-step{
+    display:flex;
+    min-width:0;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-end;
+    gap:7px;
+    grid-column:span var(--step);
+    color:rgb(var(--ink));
+    font-size:13px;
+    font-variant-numeric:tabular-nums;
+    line-height:1;
+    cursor:grab;
+  }
+  .mode-set-display.dragging .mode-set-step{
+    cursor:grabbing;
+  }
+  .mode-set-step::after{
+    width:calc(100% - 4px);
+    height:2px;
+    background:rgba(var(--ink),.5);
+    content:"";
+  }
+  .mode-set-name{
+    height:1.4em;
+    margin-top:7px;
+    text-align:center;
+    font-size:16px;
+    line-height:1.4em;
+    opacity:.62;
+  }
+  .mode-picker-apply{
+    display:grid;
+    place-items:center;
+    width:38px;
+    min-height:38px !important;
+    padding:0 !important;
+    border-radius:50%;
+    opacity:.68;
+  }
+  .mode-picker-actions{
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:2px;
+    transform:translateY(13px);
+  }
+  .mode-picker-presets-toggle{
+    display:grid;
+    place-items:center;
+    width:38px;
+    min-height:34px !important;
+    padding:0 !important;
+    border:0 !important;
+    background:transparent !important;
+    opacity:.68;
+  }
+  .mode-picker-presets-toggle:hover,
+  .mode-picker-apply:hover{opacity:1;}
+  .mode-picker-presets-toggle svg{
+    width:18px;
+    height:18px;
+    fill:none;
+    stroke:currentColor;
+    stroke-width:1.6;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+  }
+  .mode-picker-presets{
+    position:absolute;
+    left:0;
+    top:calc(100% + 6px);
+    z-index:5;
+    width:min(240px, 70vw);
+    max-height:min(280px, 45vh);
+    overflow:auto;
+    padding:6px;
+    border:1px solid rgba(var(--ink),.18);
+    border-radius:8px;
+    background:var(--bg);
+    box-shadow:0 8px 24px rgba(0,0,0,.2);
+  }
+  .mode-picker-presets h3{
+    margin:6px 8px 3px;
+    font-size:11px;
+    font-weight:500;
+    opacity:.58;
+  }
+  .mode-picker-presets h4{
+    margin:6px 8px 2px;
+    font-size:12px;
+    font-weight:500;
+    opacity:.8;
+  }
+  .mode-picker .mode-picker-presets button.mode-preset-scale{
+    display:block;
+    width:100%;
+    min-height:32px;
+    padding:5px 8px 5px 22px;
+    border:0;
+    background:transparent;
+    text-align:left;
+    font-size:12px;
+  }
+  .mode-picker .mode-picker-presets button.mode-preset-scale:hover,
+  .mode-picker .mode-picker-presets button.mode-preset-scale:focus-visible{
+    background:rgba(var(--ink),.08);
+  }
+  .mode-picker-apply svg{
+    width:17px;
+    height:17px;
+    fill:none;
+    stroke:currentColor;
+    stroke-width:1.6;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+  }
+  .mode-picker button{
+    min-height:38px;
+    padding:0 16px;
+    border:1px solid rgba(var(--ink),.16);
+    background:var(--bg);
+    color:inherit;
+    font:inherit;
+    font-size:13px;
+    cursor:pointer;
   }
 
   .arrow{
@@ -194,10 +589,14 @@
     transform:translateX(-50%);
     opacity:.45;
     transition:opacity .35s ease;
-    pointer-events:none;
+    cursor:pointer;
+    touch-action:none;
     z-index:5;
   }
   .vol.show{opacity:1;}
+  .vol.dragging{cursor:grabbing;}
+  .vol:focus{outline:none;}
+  .vol:focus-visible{outline:1px solid rgba(var(--ink),.4);outline-offset:3px;}
   .vol-line{
     position:absolute;left:0;right:0;top:50%;
     height:1px;
@@ -210,32 +609,142 @@
     background:rgba(var(--ink),.7);
     transition:left .08s ease-out;
   }
-  .playback-indicator{
+  .settings-toggle{
     position:fixed;
-    left:50%;
-    bottom:calc(14vh + env(safe-area-inset-bottom, 0px) + 24px);
-    transform:translateX(-50%);
-    color:rgba(var(--ink),.65);
-    font-size:16px;
-    line-height:1;
-    opacity:0;
-    pointer-events:none;
-    z-index:5;
+    top:calc(12px + env(safe-area-inset-top, 0px));
+    right:14px;
+    display:grid;
+    place-items:center;
+    width:32px;
+    height:32px;
+    padding:0;
+    border:0;
+    background:none;
+    color:rgba(var(--ink),.52);
+    cursor:pointer;
+    z-index:41;
+    -webkit-tap-highlight-color:transparent;
   }
-  .playback-indicator.show{animation:playback-indicator 900ms ease both;}
-  @keyframes playback-indicator{
-    0%{opacity:0;transform:translate(-50%,4px);}
-    18%,70%{opacity:.8;transform:translate(-50%,0);}
-    100%{opacity:0;transform:translate(-50%,-3px);}
+  .settings-toggle:hover,.settings-toggle:focus-visible{color:rgb(var(--ink));}
+  .settings-toggle:focus{outline:none;}
+  .settings-toggle:focus-visible{outline:1px solid rgba(var(--ink),.4);outline-offset:2px;}
+  .settings-toggle svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round;}
+  .settings-panel{
+    position:fixed;
+    top:calc(50px + env(safe-area-inset-top, 0px));
+    right:14px;
+    width:min(340px, calc(100vw - 28px));
+    max-height:min(72vh, 620px);
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    padding:14px;
+    border:1px solid rgba(var(--ink),.15);
+    background:var(--bg);
+    box-shadow:0 6px 24px rgba(var(--ink),.1);
+    color:rgb(var(--ink));
+    z-index:40;
   }
-
+  .settings-panel[hidden]{display:none;}
+  .settings-heading-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .settings-heading{font-size:13px;font-weight:450;letter-spacing:.02em;}
+  .target-settings-reset{
+    display:grid;
+    place-items:center;
+    flex:0 0 26px;
+    width:26px;
+    height:26px;
+    padding:0;
+    border:0;
+    background:none;
+    color:inherit;
+    opacity:.58;
+    cursor:pointer;
+  }
+  .target-settings-reset:hover,.target-settings-reset:focus-visible{opacity:1;}
+  .target-settings-reset:focus{outline:none;}
+  .target-settings-reset:focus-visible{outline:1px solid rgba(var(--ink),.45);outline-offset:1px;}
+  .target-settings-reset svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
+  .settings-description{margin-top:5px;font-size:11px;line-height:1.45;opacity:.58;}
+  .target-order{display:grid;gap:4px;margin-top:12px;}
+  .target-order-row{
+    display:grid;
+    grid-template-columns:30px minmax(0,1fr) 28px;
+    align-items:center;
+    min-height:34px;
+    border:1px solid rgba(var(--ink),.1);
+    background:rgba(var(--ink),.018);
+  }
+  .target-order-row.fixed{grid-template-columns:30px minmax(0,1fr);}
+  .target-order-row.dragging{opacity:.42;}
+  .target-order-name{font-size:12px;}
+  .target-order-detail{display:block;margin-top:2px;font-size:10px;opacity:.52;}
+  .target-order-grip,.target-order-remove{
+    display:grid;
+    place-items:center;
+    width:28px;
+    height:32px;
+    border:0;
+    background:none;
+    color:inherit;
+    opacity:.55;
+    cursor:pointer;
+  }
+  .target-order-grip{cursor:grab;touch-action:none;font-size:16px;letter-spacing:-2px;}
+  .target-order-grip:active{cursor:grabbing;}
+  .target-order-remove{font-size:18px;line-height:1;}
+  .target-order-grip:hover,.target-order-remove:hover,
+  .target-order-grip:focus-visible,.target-order-remove:focus-visible{opacity:1;}
+  .target-order-grip:focus,.target-order-remove:focus{outline:none;}
+  .target-order-grip:focus-visible,.target-order-remove:focus-visible{outline:1px solid rgba(var(--ink),.4);outline-offset:-3px;}
+  .target-order-copy{min-width:0;padding:5px 4px;}
+  .target-add{display:flex;gap:6px;margin-top:10px;}
+  .target-add select,.target-add button{
+    min-height:32px;
+    border:1px solid rgba(var(--ink),.16);
+    border-radius:0;
+    background:var(--bg);
+    color:inherit;
+    font:inherit;
+    font-size:11px;
+  }
+  .target-add select{flex:1;min-width:0;padding:0 6px;}
+  .target-add button{padding:0 10px;cursor:pointer;}
+  .target-add button:disabled{opacity:.4;cursor:default;}
+  .target-add select:focus-visible,.target-add button:focus-visible{outline:1px solid rgba(var(--ink),.45);outline-offset:2px;}
+  @media (prefers-reduced-motion:reduce){
+    .settings-panel{scroll-behavior:auto;}
+  }
+  .note-playback-toggle{
+    position:fixed;
+    left:calc(50% + 82px);
+    bottom:calc(14vh + env(safe-area-inset-bottom, 0px) - 8px);
+    display:grid;
+    place-items:center;
+    width:30px;
+    height:30px;
+    padding:0;
+    border:0;
+    background:none;
+    color:rgba(var(--ink),.55);
+    cursor:pointer;
+    z-index:6;
+    -webkit-tap-highlight-color:transparent;
+    transition:color .2s ease;
+  }
+  .note-playback-toggle:hover,.note-playback-toggle:focus-visible{color:rgb(var(--ink));}
+  .note-playback-toggle:focus{outline:none;}
+  .note-playback-toggle:focus-visible{outline:1px solid rgba(var(--ink),.4);outline-offset:2px;}
+  .note-playback-toggle svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
+  .note-playback-toggle .sound-on,.note-playback-toggle .sound-muted{display:none;}
+  .note-playback-toggle[aria-pressed="true"] .sound-on,
+  .note-playback-toggle[aria-pressed="false"] .sound-muted{display:block;}
   .tline{
     stroke:rgba(var(--ink),.28);
     stroke-width:1;
     stroke-linecap:round;
     transition:stroke .15s ease, stroke-width .15s ease;
   }
-  .tline.held{stroke:rgba(var(--ink),.8);stroke-width:1.4;}
+  .tline.latched{stroke:rgba(var(--ink),.8);stroke-width:1.4;}
   .tline.on{stroke:rgba(var(--ink),.8);stroke-width:1.8;}
   .tname{fill:rgb(var(--ink));font-weight:300;opacity:.5;transition:opacity .15s ease;}
   .tname.on{opacity:1;}
@@ -291,6 +800,14 @@
   .hist-item{
     display:inline-block;
   }
+  .hist-inversion{
+    display:inline-block;
+    margin-left:.08em;
+    font-size:.66em;
+    line-height:0;
+    vertical-align:super;
+    opacity:.68;
+  }
   .hist-item.pop{
     animation:hist-pop .28s cubic-bezier(.2,.8,.3,1) both;
   }
@@ -322,6 +839,7 @@
     pointer-events:none;
     transition:opacity .2s ease, transform .2s ease;
   }
+  .histbar.has-progression .hist-tools,
   .histbar:hover .hist-tools,
   .histbar:focus-within .hist-tools,
   .histbar.tools-open .hist-tools{
@@ -488,7 +1006,6 @@
     .hist.editing .hist-caret{animation:none;}
     .hist-track,.hist-tools,.hist-export-menu,.hist-copy-menu{transition-duration:.01ms;}
     .histbar.idle-clearing .hist-item{transition-duration:.01ms;}
-    .playback-indicator.show{animation-duration:.01ms;}
   }
 
   .blob{
@@ -515,7 +1032,36 @@
 </style>
 </head>
 <body>
-
+<div class="piano-indicator" id="pianoIndicator" role="img" aria-label="C major chord shown on piano keys">
+  <span class="piano-caption" id="pianoCaption">C major</span>
+  <svg class="piano-keys" id="pianoKeys" viewBox="0 0 196 88" aria-hidden="true">
+    <path class="piano-white" data-pc="0" d="M1 1 Q14 .4 27 .9 L27.5 84 Q14.8 85 1 83.5 Z"/>
+    <path class="piano-white" data-pc="2" d="M29 .8 Q42 1.5 55 .6 L55.2 83.7 Q42.4 84.6 28.7 84 Z"/>
+    <path class="piano-white" data-pc="4" d="M57 1.2 Q70 .5 83 1 L83.4 84.2 Q70.5 83.3 56.8 84 Z"/>
+    <path class="piano-white" data-pc="5" d="M85 .9 Q98 1.5 111 .7 L111.3 83.8 Q98.4 85 84.8 84.1 Z"/>
+    <path class="piano-white" data-pc="7" d="M113 1.1 Q126 .5 139 1.3 L139.5 84 Q126.2 83.2 112.8 84 Z"/>
+    <path class="piano-white" data-pc="9" d="M141 .7 Q154 1.4 167 .8 L167.3 83.6 Q154.2 84.7 140.8 84 Z"/>
+    <path class="piano-white" data-pc="11" d="M169 1 Q182 .5 195 1.2 L194.6 83.8 Q182.2 84.4 168.8 83.5 Z"/>
+    <path class="piano-black" data-pc="1" d="M19.2 1 Q27.8 .5 36.3 1.4 L36 50.8 Q27.9 52.1 19 51 Z"/>
+    <path class="piano-black" data-pc="3" d="M47.2 .8 Q55.7 1.5 64.2 .9 L64.5 51.3 Q55.8 50.4 47 51 Z"/>
+    <path class="piano-black" data-pc="6" d="M103.2 1.1 Q111.8 .4 120.3 1.2 L120 51 Q111.7 51.8 103 50.7 Z"/>
+    <path class="piano-black" data-pc="8" d="M131.2 .9 Q139.8 1.5 148.2 .8 L148.5 50.7 Q139.7 51.6 131 51 Z"/>
+    <path class="piano-black" data-pc="10" d="M159.2 1.2 Q167.8 .5 176.3 1 L176 51.2 Q167.9 50.5 159 51 Z"/>
+    <path class="piano-sketch" d="M2 3 Q13 2 25 3 M30 3 Q42 3 53 2 M58 3 Q70 2 81 3 M86 3 Q98 3 109 2 M114 3 Q126 2 137 3 M142 3 Q154 3 165 2 M170 3 Q182 2 193 3"/>
+    <path class="piano-sketch" d="M3 81 Q13 82 24 81 M31 82 Q42 81 52 82 M59 81 Q70 82 80 81 M87 82 Q98 81 108 82 M115 81 Q126 82 136 81 M143 82 Q154 81 164 82 M171 81 Q182 82 192 81"/>
+  </svg>
+</div>
+<button class="piano-toggle" id="pianoToggle" type="button" aria-label="Hide piano chord indicator" aria-controls="pianoIndicator" aria-expanded="true">
+  <svg viewBox="0 0 12 8" aria-hidden="true"><path d="m1 1.5 5 5 5-5"/></svg>
+</button>
+<div class="inversion-indicator" id="inversionIndicator" role="status" aria-live="polite" aria-hidden="true">
+  <div class="inversion-options" aria-label="Chord inversion">
+    <span class="inversion-label" aria-hidden="true">INV</span>
+    <span class="inversion-option" data-inversion="1">1</span>
+    <span class="inversion-option" data-inversion="2">2</span>
+    <span class="inversion-option" data-inversion="3">3</span>
+  </div>
+</div>
 <div class="app">
   <button class="arrow" id="prev" aria-label="Previous">&lt;</button>
   <div class="notes" id="notes"></div>
@@ -525,13 +1071,92 @@
 <div class="mode-wheel" id="modeWheel" role="group" aria-label="Scale modes; drag up or down to change mode">
   <svg class="mode-arc" id="modeArc" aria-hidden="true"><path id="modeArcPath"/></svg>
 </div>
+<div class="mode-picker-backdrop" id="modePickerBackdrop" aria-hidden="true" hidden></div>
+<section class="mode-picker" id="modePicker" role="dialog" aria-modal="true"
+         aria-labelledby="modePickerTitle" hidden>
+  <button class="mode-picker-close" id="modePickerCancel" type="button"
+          aria-label="Cancel and close scale family picker" title="Cancel">×</button>
+  <div class="mode-picker-title-row" id="modePickerPresetsControl">
+    <h2 id="modePickerTitle">Scale family</h2>
+    <button class="mode-picker-presets-toggle" id="modePickerPresetsToggle" type="button"
+            aria-label="Choose a named scale preset" aria-expanded="false"
+            aria-controls="modePickerPresets" title="Named scale presets">
+      <svg viewBox="0 0 20 20" aria-hidden="true">
+        <path d="M4 5h12M4 10h12M4 15h12"/>
+        <circle cx="7" cy="5" r="1.5" fill="var(--bg)"/>
+        <circle cx="13" cy="10" r="1.5" fill="var(--bg)"/>
+        <circle cx="9" cy="15" r="1.5" fill="var(--bg)"/>
+      </svg>
+    </button>
+    <div class="mode-picker-presets" id="modePickerPresets"
+         role="group" aria-label="Named scale presets" hidden></div>
+  </div>
+  <div class="mode-family-picker">
+    <div class="mode-cardinality-selector" aria-label="Scale cardinality">
+      <button id="modeCardinalityPrevious" type="button" aria-label="Decrease cardinality"
+              title="Decrease cardinality">‹</button>
+      <span class="mode-cardinality-value" id="modeCardinalityValue" aria-live="polite"></span>
+      <button id="modeCardinalityNext" type="button" aria-label="Increase cardinality"
+              title="Increase cardinality">›</button>
+      <span class="mode-cardinality-caption">CARD</span>
+    </div>
+    <svg class="mode-family-chart" id="modeFamilyChart" role="group"
+         aria-label="Select a set family by its semitone-step distribution"></svg>
+  </div>
+  <div class="mode-set-selector">
+    <div class="mode-set-arrows">
+      <button id="modeSetPrevious" type="button" aria-label="Previous set" title="Previous set">↑</button>
+      <button id="modeSetNext" type="button" aria-label="Next set" title="Next set">↓</button>
+    </div>
+    <div class="mode-set-display" id="modeSetDisplay" role="group" aria-label="Current set"
+         title="Drag interval values to rearrange the set"></div>
+    <div class="mode-picker-actions">
+      <button class="mode-picker-apply" id="modePickerApply" type="button"
+              aria-label="Apply selected scale" title="Apply">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m4 10 4 4 8-8"/></svg>
+      </button>
+    </div>
+  </div>
+  <p class="mode-set-name" id="modeSetName" aria-live="polite"></p>
+</section>
 
-<div class="vol" id="vol" aria-hidden="true">
+<div class="vol" id="vol" role="slider" tabindex="0" aria-label="Volume"
+     aria-valuemin="0" aria-valuemax="100" aria-valuenow="80">
   <div class="vol-line"></div>
   <div class="vol-thumb" id="volThumb"></div>
 </div>
-<div class="playback-indicator" id="playbackIndicator" aria-hidden="true"></div>
-
+<button class="settings-toggle" id="settingsToggle" type="button" aria-label="Chord target settings"
+        aria-expanded="false" aria-controls="settingsPanel">
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M9.8 2.5h4.4l.6 2.8a7.5 7.5 0 0 1 1.8.8l2.6-1.3 2.2 3.8-2.1 1.9a7.8 7.8 0 0 1 0 2l2.1 1.9-2.2 3.8-2.6-1.3a7.5 7.5 0 0 1-1.8.8l-.6 2.8H9.8l-.6-2.8a7.5 7.5 0 0 1-1.8-.8l-2.6 1.3-2.2-3.8 2.1-1.9a7.8 7.8 0 0 1 0-2L2.6 8.6l2.2-3.8 2.6 1.3a7.5 7.5 0 0 1 1.8-.8l.6-2.8Z"/>
+    <circle cx="12" cy="11.5" r="3"/>
+  </svg>
+</button>
+<section class="settings-panel" id="settingsPanel" aria-label="Chord target settings" hidden>
+  <div class="settings-heading-row">
+    <h2 class="settings-heading">Chord progression targets</h2>
+    <button class="target-settings-reset" id="targetSettingsReset" type="button"
+            aria-label="Reset chord targets to defaults" title="Reset to defaults">
+      <svg viewBox="0 0 20 20" aria-hidden="true">
+        <path d="M3.5 8a6.7 6.7 0 1 1-.2 3"/>
+        <path d="M3.5 3.8V8h4.2"/>
+      </svg>
+    </button>
+  </div>
+  <p class="settings-description">Drag to reorder alternate chords, or focus a grip and use the arrow keys. The diatonic chord stays first and cannot be changed.</p>
+  <div class="target-order" id="targetOrder"></div>
+  <div class="target-add">
+    <select id="targetTypeSelect" aria-label="Chord type to add"></select>
+    <button id="targetAddButton" type="button">Add</button>
+  </div>
+</section>
+<button class="note-playback-toggle" id="notePlaybackToggle" type="button" aria-label="Mute active-note playback" aria-pressed="true">
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M4 10v4h4l5 4V6l-5 4H4z"/>
+    <g class="sound-on"><path d="M16 9a5 5 0 0 1 0 6"/><path d="M18.5 6.5a8.5 8.5 0 0 1 0 11"/></g>
+    <g class="sound-muted"><path d="m16 9 5 6"/><path d="m21 9-5 6"/></g>
+  </svg>
+</button>
 <div class="histbar" id="histBar">
   <div class="hist" id="hist" role="textbox" aria-multiline="false" tabindex="0" aria-label="Chord progression editor. Click to place the cursor; use left and right arrows to move and Backspace to delete.">
     <div class="hist-track" id="histTrack"></div>
@@ -561,7 +1186,6 @@
     <button class="hist-tool" id="histSave" type="button" aria-label="Save current progression">save</button>
     <button class="hist-tool" id="histArchive" type="button" aria-expanded="false" aria-controls="histPopover">history</button>
     <button class="hist-tool" id="histPlay" type="button" aria-label="Play current progression">play</button>
-    <button class="hist-tool" id="histEntryMode" type="button" aria-label="Switch to hover-to-play entry mode" aria-pressed="true">entry: click</button>
   </div>
   <div class="hist-popover" id="histPopover" hidden></div>
   <div class="hist-status" id="histStatus" role="status" aria-live="polite"></div>
@@ -570,20 +1194,7 @@
 <svg class="blob" id="blob" aria-hidden="true" focusable="false">
   <path id="blobPathSolid" class="blob-path solid" d="" style="opacity:0"/>
   <path id="blobPath" class="blob-path" d="" style="opacity:0"/>
-  <g id="targets" style="opacity:0">
-    <line id="tl1" class="tline"/>
-    <text id="tn1" class="tname" text-anchor="middle"></text>
-    <text id="tr1" class="trom" text-anchor="middle"></text>
-    <line id="tl2" class="tline"/>
-    <text id="tn2" class="tname" text-anchor="middle"></text>
-    <text id="tr2" class="trom" text-anchor="middle"></text>
-    <line id="tl3" class="tline"/>
-    <text id="tn3" class="tname" text-anchor="middle"></text>
-    <text id="tr3" class="trom" text-anchor="middle"></text>
-    <line id="tl4" class="tline"/>
-    <text id="tn4" class="tname" text-anchor="middle"></text>
-    <text id="tr4" class="trom" text-anchor="middle"></text>
-  </g>
+  <g id="targets" style="opacity:0"></g>
   <g id="tpin" style="opacity:0">
     <line id="tlp" class="tline on"/>
     <text id="tnp" class="tname on" text-anchor="middle"></text>
@@ -618,8 +1229,17 @@
     return intervals.slice(0, 7);
   }
 
-  const stepMode = (name, steps) => ({ name, intervals: intervalsFromSteps(steps) });
-  const MODES = [
+  const stepMode = (name, steps, family = name) => ({
+    name,
+    intervals: intervalsFromSteps(steps),
+    family,
+  });
+  const intervalMode = (name, intervals, family = name) => ({
+    name,
+    intervals,
+    family,
+  });
+  const NAMED_MODES = [
     stepMode('Ionian', 'WWHWWWH'),
     stepMode('Dorian', 'WHWWWHW'),
     stepMode('Phrygian', 'HWWWHWW'),
@@ -635,15 +1255,261 @@
     stepMode('Nelsonian', 'WWHWHWW'),
     stepMode('Sunian', 'WHWHWWW'),
     stepMode('Gexian', 'HWHWWWW'),
-    stepMode('Whole 0', 'HWWWWWH'),
-    stepMode('Whole 1', 'WWWWWHH'),
-    stepMode('Whole 2', 'WWWWHHW'),
-    stepMode('Whole 3', 'WWWHHWW'),
-    stepMode('Whole 4', 'WWHHWWW'),
-    stepMode('Whole 5', 'WHHWWWW'),
-    stepMode('Whole 6', 'HHWWWWW'),
+    stepMode('Whole 0', 'HWWWWWH', 'Neapolitan Major'),
+    stepMode('Whole 1', 'WWWWWHH', 'Neapolitan Major'),
+    stepMode('Whole 2', 'WWWWHHW', 'Neapolitan Major'),
+    stepMode('Whole 3', 'WWWHHWW', 'Neapolitan Major'),
+    stepMode('Whole 4', 'WWHHWWW', 'Neapolitan Major'),
+    stepMode('Whole 5', 'WHHWWWW', 'Neapolitan Major'),
+    stepMode('Whole 6', 'HHWWWWW', 'Neapolitan Major'),
     stepMode('Melodic minor', 'WHWWWWH'),
+    intervalMode('Major pentatonic', [0, 2, 4, 7, 9], 'Pentatonic'),
+    intervalMode('Minor pentatonic', [0, 3, 5, 7, 10], 'Pentatonic'),
+    intervalMode('Blues', [0, 3, 5, 6, 7, 10]),
+    intervalMode('Whole tone', [0, 2, 4, 6, 8, 10], 'Whole-tone'),
+    intervalMode('Harmonic major', [0, 2, 4, 5, 7, 8, 11]),
+    intervalMode('Double harmonic', [0, 1, 4, 5, 7, 8, 11]),
+    intervalMode('Neapolitan major', [0, 1, 3, 5, 7, 9, 11], 'Neapolitan Major'),
+    intervalMode('Neapolitan minor', [0, 1, 3, 5, 7, 8, 11]),
+    intervalMode('Lydian dominant', [0, 2, 4, 6, 7, 9, 10]),
+    intervalMode('Whole-half diminished', [0, 2, 3, 5, 6, 8, 9, 11], 'Diminished'),
+    intervalMode('Half-whole diminished', [0, 1, 3, 4, 6, 7, 9, 10], 'Diminished'),
+    intervalMode('Bebop dominant', [0, 2, 4, 5, 7, 9, 10, 11], 'Bebop'),
+    intervalMode('Bebop major', [0, 2, 4, 5, 7, 8, 9, 11], 'Bebop'),
+    intervalMode('Bebop Dorian', [0, 2, 3, 4, 5, 7, 9, 10], 'Bebop'),
   ];
+  const DEFAULT_SCALE_CARDINALITY = 7;
+  const MIN_SCALE_CARDINALITY = 1;
+  const OCTAVE_SEMITONES = 12;
+  const PREFERRED_NAMED_MODE_NAMES = new Set([
+    'Ionian', 'Dorian', 'Phrygian', 'Lydian', 'Mixolydian', 'Aeolian', 'Locrian',
+    'Harmonic minor', 'Melodic minor', 'Major pentatonic', 'Minor pentatonic',
+    'Blues', 'Whole tone', 'Harmonic major', 'Double harmonic',
+    'Neapolitan major', 'Neapolitan minor', 'Lydian dominant',
+    'Whole-half diminished', 'Half-whole diminished', 'Bebop dominant',
+    'Bebop major', 'Bebop Dorian',
+  ]);
+
+  function intervalSteps(mode) {
+    return mode.intervals.map((start, index) =>
+      (mode.intervals[index + 1] ?? OCTAVE_SEMITONES) - start);
+  }
+
+  function namedModeMap() {
+    const modesByPattern = new Map();
+    for (const mode of NAMED_MODES) {
+      const signature = intervalSteps(mode).join(',');
+      const current = modesByPattern.get(signature);
+      if (!current || (PREFERRED_NAMED_MODE_NAMES.has(mode.name) &&
+          !PREFERRED_NAMED_MODE_NAMES.has(current.name))) {
+        modesByPattern.set(signature, mode);
+      }
+    }
+    return modesByPattern;
+  }
+
+  const NAMED_SCALE_PRESETS = Array.from(namedModeMap().values())
+    .sort((a, b) => a.intervals.length - b.intervals.length || a.name.localeCompare(b.name));
+
+  function rotateSteps(steps, offset) {
+    return steps.map((_, index) => steps[(index + offset) % steps.length]);
+  }
+
+  function compareSteps(a, b) {
+    for (let i = 0; i < a.length; i++) {
+      if (a[i] !== b[i]) return a[i] - b[i];
+    }
+    return 0;
+  }
+
+  function canonicalSteps(steps) {
+    let best = steps;
+    for (let offset = 1; offset < steps.length; offset++) {
+      const rotated = rotateSteps(steps, offset);
+      if (compareSteps(rotated, best) < 0) best = rotated;
+    }
+    return best;
+  }
+
+  function intervalsFromGaps(gaps) {
+    const intervals = [0];
+    for (let i = 0; i < gaps.length - 1; i++) {
+      intervals.push(intervals[i] + gaps[i]);
+    }
+    return intervals;
+  }
+
+  function intervalPatternLabel(steps) {
+    return steps.map((step) => step < 10 ? String(step) : `[${step}]`).join('');
+  }
+
+  function stepDistribution(steps) {
+    const counts = Array(OCTAVE_SEMITONES + 1).fill(0);
+    for (const step of steps) counts[step]++;
+    return counts;
+  }
+
+  function distributionKey(distribution) {
+    return distribution.join(',');
+  }
+
+  function distributionLabel(distribution) {
+    return distribution
+      .map((count, step) => count ? `${step}×${count}` : null)
+      .filter(Boolean)
+      .join('  ');
+  }
+
+  function generateScaleFamilies(cardinality) {
+    const compositions = [];
+    function generate(prefix, remaining, slots) {
+      if (slots === 1) {
+        if (remaining >= 1) compositions.push([...prefix, remaining]);
+        return;
+      }
+      for (let step = 1; step <= remaining - slots + 1; step++) {
+        generate([...prefix, step], remaining - step, slots - 1);
+      }
+    }
+    generate([], OCTAVE_SEMITONES, cardinality);
+
+    const familySteps = new Map();
+    for (const steps of compositions) {
+      const canonical = canonicalSteps(steps);
+      familySteps.set(canonical.join(','), canonical);
+    }
+
+    const namedByPattern = namedModeMap();
+
+    return Array.from(familySteps.values())
+      .sort(compareSteps)
+      .map((canonical) => {
+        const familyId = canonical.join(',');
+        const seenRotations = new Set();
+        const modes = [];
+        for (let rotation = 0; rotation < cardinality; rotation++) {
+          const steps = rotateSteps(canonical, rotation);
+          const signature = steps.join(',');
+          if (seenRotations.has(signature)) continue;
+          seenRotations.add(signature);
+          modes.push({
+            name: namedByPattern.get(signature)?.name || `Mode ${modes.length + 1}`,
+            intervals: intervalsFromGaps(steps),
+            steps,
+          });
+        }
+        const namedModes = modes.filter((mode) =>
+          namedByPattern.has(mode.steps.join(',')));
+        const namedFamilies = new Set(namedModes.map((mode) =>
+          namedByPattern.get(mode.steps.join(','))?.family || mode.name));
+        const familyPattern = namedModes.find((mode) =>
+          ['Ionian', 'Joen', 'Melodic minor', 'Whole 0'].includes(mode.name))?.steps ||
+          namedModes[0]?.steps || canonical;
+        const familyName = namedModes.length === modes.length
+          ? namedModes.map((mode) => mode.name).includes('Ionian')
+            ? 'Classical set'
+            : namedFamilies.has('Neapolitan Major')
+              ? 'Neapolitan Major Set'
+              : namedModes.some((mode) =>
+              mode.name === 'Joen' || mode.name === 'Melodic minor')
+              ? 'Melodic set'
+              : namedFamilies.size === 1
+                ? `${namedFamilies.values().next().value} Set`
+                : intervalPatternLabel(canonical)
+          : namedModes.length === 1
+            ? `${namedModes[0].name} family`
+            : namedFamilies.size === 1
+              ? `${namedFamilies.values().next().value} Set`
+            : 'Generated family';
+        return {
+          id: familyId,
+          cardinality,
+          steps: canonical,
+          distribution: stepDistribution(canonical),
+          distributionKey: distributionKey(stepDistribution(canonical)),
+          label: `${intervalPatternLabel(familyPattern)} — ${familyName}`,
+          modes,
+        };
+      });
+  }
+
+  const MODE_FAMILIES_BY_CARDINALITY = new Map(
+    Array.from({ length: 12 - MIN_SCALE_CARDINALITY + 1 }, (_, index) => {
+      const cardinality = MIN_SCALE_CARDINALITY + index;
+      return [cardinality, generateScaleFamilies(cardinality)];
+    })
+  );
+  const MODE_FAMILIES = Array.from(MODE_FAMILIES_BY_CARDINALITY.values()).flat();
+  const MODE_FAMILY_BY_ID = new Map(MODE_FAMILIES.map((family) => [family.id, family]));
+  const IONIAN_STEPS = intervalSteps(NAMED_MODES[0]);
+  const DEFAULT_MODE_FAMILY = MODE_FAMILIES.find((family) =>
+    family.cardinality === DEFAULT_SCALE_CARDINALITY &&
+    family.id === canonicalSteps(IONIAN_STEPS).join(','));
+  function defaultModeIndex(family) {
+    const namedAnchors = family.cardinality === DEFAULT_SCALE_CARDINALITY
+      ? ['Ionian', 'Joen', 'Melodic minor', 'Whole 0', 'Harmonic minor']
+      : [];
+    for (const name of namedAnchors) {
+      const index = family.modes.findIndex((mode) => mode.name === name);
+      if (index >= 0) return index;
+    }
+
+    function score(mode) {
+      const cardinality = family.cardinality;
+      const third = mode.intervals[2 % cardinality] +
+        Math.floor(2 / cardinality) * OCTAVE_SEMITONES;
+      const fifth = mode.intervals[4 % cardinality] +
+        Math.floor(4 / cardinality) * OCTAVE_SEMITONES;
+      const majorTriad = third === 4 && fifth === 7;
+      const minorTriad = third === 3 && fifth === 7;
+      const leadingTone = mode.steps[cardinality - 1] === 1;
+      const majorIntervals = cardinality === DEFAULT_SCALE_CARDINALITY
+        ? [0, 2, 4, 5, 7, 9, 11]
+        : null;
+      const distanceFromMajor = majorIntervals
+        ? mode.intervals.reduce((sum, interval, degree) =>
+          sum + Math.abs(interval - majorIntervals[degree]), 0)
+        : 0;
+      return [
+        majorTriad ? 2 : minorTriad ? 1 : 0,
+        leadingTone ? 1 : 0,
+        -distanceFromMajor,
+      ];
+    }
+
+    let bestIndex = 0;
+    for (let index = 1; index < family.modes.length; index++) {
+      const candidate = score(family.modes[index]);
+      const best = score(family.modes[bestIndex]);
+      const comparison = candidate.findIndex((value, scoreIndex) =>
+        value !== best[scoreIndex]);
+      if (comparison >= 0 && candidate[comparison] > best[comparison]) bestIndex = index;
+    }
+    return bestIndex;
+  }
+  const MODE_FAMILY_STORAGE_KEY = 'chord-explorer-mode-family-v1';
+  let activeModeFamily = DEFAULT_MODE_FAMILY;
+  let scaleCardinality = activeModeFamily.cardinality;
+  let MODES = activeModeFamily.modes;
+  let modeIdx = activeModeFamily.modes.findIndex((mode) =>
+    mode.steps.join(',') === IONIAN_STEPS.join(','));
+  if (modeIdx < 0) modeIdx = 0;
+  try {
+    const savedMode = JSON.parse(localStorage.getItem(MODE_FAMILY_STORAGE_KEY) || 'null');
+    const savedFamily = savedMode && MODE_FAMILY_BY_ID.get(savedMode.familyId);
+    if (savedFamily && Array.isArray(savedMode.rootSteps)) {
+      const savedIndex = savedFamily.modes.findIndex((mode) =>
+        mode.steps.join(',') === savedMode.rootSteps.join(','));
+      if (savedIndex >= 0) {
+        activeModeFamily = savedFamily;
+        scaleCardinality = savedFamily.cardinality;
+        MODES = savedFamily.modes;
+        modeIdx = savedIndex;
+      }
+    }
+  } catch (error) {
+    console.warn('Unable to load the selected scale family.', error);
+  }
   const MAJOR_INTERVALS = [0, 2, 4, 5, 7, 9, 11];
   const ROMAN_NUMERALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
   const LETTERS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
@@ -659,7 +1525,7 @@
   const MODE_DRAG_SPEED_SCALE = 4;
   const MODE_DRAG_MAX_STEP = 300;
 
-  /* hover playback */
+  /* click playback */
   const PEAK     = 0.55;  /* per-chord peak at full volume (voices are normalised) */
   const WHEEL_K  = 0.0015;/* volume change per wheel pixel */
   const WHEEL_MAX_DELTA = 13.33; /* cap volume change per wheel event (px) */
@@ -678,13 +1544,37 @@
     maj7: [0, 4, 7, 11],
     m7:   [0, 3, 7, 10],
     dom7: [0, 4, 7, 10],
+    dom7sus4: [0, 5, 7, 10],
+    dom7b9: [0, 4, 7, 10, 13],
+    dom7sharp5: [0, 4, 8, 10],
+    dom7sharp9: [0, 4, 7, 10, 15],
+    dom7flat5: [0, 4, 6, 10],
     dim7: [0, 3, 6, 9],
   };
+
+  function chordVoicing(quality, inversion = 0) {
+    const intervals = CHORD_TYPES[quality] || CHORD_TYPES.maj;
+    const voiceWeights = [1, 0.85, 0.75, 0.65, 0.55];
+    const offset = Math.max(0, Math.min(inversion, intervals.length - 1));
+    const notes = intervals.map((_, index) => {
+      const sourceIndex = (index + offset) % intervals.length;
+      return intervals[sourceIndex] + (sourceIndex < offset ? 12 : 0);
+    });
+    return [
+      { semitones: notes[0] - 12, weight: 0.45 },
+      ...notes.map((semitones, index) => ({
+        semitones,
+        weight: voiceWeights[index] ?? 0.55,
+      })),
+    ];
+  }
   const TYPE_SUFFIX = {
     maj: '', min: 'm', dim: 'dim', aug: '+',
     sus2b5: 'sus2b5', sus2: 'sus2', sus2aug: 'sus2#5',
     minaug: 'm#5', majb5: 'maj♭5',
     maj7: 'maj7', m7: 'm7', dom7: '7', dim7: 'dim7',
+    dom7sus4: '7sus4', dom7b9: '7\u266d9', dom7sharp5: '7\u266f5',
+    dom7sharp9: '7\u266f9', dom7flat5: '7\u266d5',
   };
   const ROMAN_SUFFIX = {
     sus2b5: 'sus2♭5', sus2: 'sus2', sus2aug: 'sus2#5',
@@ -725,11 +1615,14 @@
   }
 
   function triadQuality(intervals, degree) {
+    const cardinality = intervals.length;
     const root = intervals[degree];
-    const thirdIndex = degree + 2;
-    const fifthIndex = degree + 4;
-    const third = intervals[thirdIndex % 7] + (thirdIndex >= 7 ? 12 : 0) - root;
-    const fifth = intervals[fifthIndex % 7] + (fifthIndex >= 7 ? 12 : 0) - root;
+    const thirdDegree = degree + 2;
+    const fifthDegree = degree + 4;
+    const third = intervals[thirdDegree % cardinality] +
+      Math.floor(thirdDegree / cardinality) * OCTAVE_SEMITONES - root;
+    const fifth = intervals[fifthDegree % cardinality] +
+      Math.floor(fifthDegree / cardinality) * OCTAVE_SEMITONES - root;
     const qualities = {
       '4,7': 'maj',
       '3,7': 'min',
@@ -743,30 +1636,46 @@
     };
     const quality = qualities[third + ',' + fifth];
     if (quality) return quality;
-    throw new Error('Unsupported diatonic triad: ' + third + ',' + fifth);
+    const customQuality = `custom-${third}-${fifth}`;
+    CHORD_TYPES[customQuality] = [0, third, fifth];
+    TYPE_SUFFIX[customQuality] = `[${third},${fifth}]`;
+    ROMAN_SUFFIX[customQuality] = `[${third},${fifth}]`;
+    return customQuality;
   }
 
   function buildScale(keyIndex, modeIndex) {
     const key = KEYS[keyIndex];
     const mode = MODES[modeIndex];
+    const cardinality = mode.intervals.length;
     const tonicLetter = key.notes[0].charAt(0);
     const tonicLetterIndex = LETTERS.indexOf(tonicLetter);
     const intervals = [...mode.intervals, 12];
+    const chromaticNames = KEY_FLATS[keyIndex].mi ? FLAT_N : SHARP_N;
     const notes = [];
     const qualities = [];
     const labels = [];
 
-    for (let degree = 0; degree < 7; degree++) {
+    for (let degree = 0; degree < cardinality; degree++) {
       const letter = LETTERS[(tonicLetterIndex + degree) % LETTERS.length];
-      notes.push(spellScaleNote(key.midi + mode.intervals[degree], letter));
+      const midi = key.midi + mode.intervals[degree];
+      notes.push(cardinality === DEFAULT_SCALE_CARDINALITY
+        ? spellScaleNote(midi, letter)
+        : chromaticNames[((midi % 12) + 12) % 12]);
       const quality = triadQuality(mode.intervals, degree);
       qualities.push(quality);
-      const alteration = mode.intervals[degree] - MAJOR_INTERVALS[degree];
+      const alteration = cardinality === DEFAULT_SCALE_CARDINALITY
+        ? mode.intervals[degree] - MAJOR_INTERVALS[degree]
+        : 0;
       const prefix = alteration > 0 ? '#'.repeat(alteration) : 'b'.repeat(-alteration);
+      const customThird = /^custom-(\d+)-/.exec(quality);
       const numeral = quality === 'maj' || quality === 'aug' || quality === 'majb5' ||
-        quality.startsWith('sus2')
-        ? ROMAN_NUMERALS[degree]
-        : ROMAN_NUMERALS[degree].toLowerCase();
+        quality.startsWith('sus2') || (customThird && Number(customThird[1]) >= 4)
+        ? cardinality === DEFAULT_SCALE_CARDINALITY
+          ? ROMAN_NUMERALS[degree]
+          : String(degree + 1)
+        : cardinality === DEFAULT_SCALE_CARDINALITY
+          ? ROMAN_NUMERALS[degree].toLowerCase()
+          : String(degree + 1);
       const qualitySuffix = quality === 'dim' ? '°'
         : quality === 'aug' ? '+'
           : ROMAN_SUFFIX[quality] || '';
@@ -780,7 +1689,6 @@
   }
 
   /* vertical layout of the target lines */
-  const DRAG_ARM = 5;   /* px of movement before targets can be picked */
   const T_HYST   = 6;   /* px of stickiness between targets */
 
   const notesEl = document.getElementById('notes');
@@ -788,19 +1696,45 @@
   const nextBtn = document.getElementById('next');
   const modeWheel = document.getElementById('modeWheel');
   const modeArc = document.getElementById('modeArc');
+  const modePicker = document.getElementById('modePicker');
+  const modePickerBackdrop = document.getElementById('modePickerBackdrop');
+  let modePickerBackgroundStates = null;
+  const modeCardinalityValue = document.getElementById('modeCardinalityValue');
+  const modeCardinalityPrevious = document.getElementById('modeCardinalityPrevious');
+  const modeCardinalityNext = document.getElementById('modeCardinalityNext');
+  const modeFamilyChart = document.getElementById('modeFamilyChart');
+  const modeSetDisplay = document.getElementById('modeSetDisplay');
+  const modeSetName = document.getElementById('modeSetName');
+  const modeSetPrevious = document.getElementById('modeSetPrevious');
+  const modeSetNext = document.getElementById('modeSetNext');
+  const modePickerPresetsControl = document.getElementById('modePickerPresetsControl');
+  const modePickerPresetsToggle = document.getElementById('modePickerPresetsToggle');
+  const modePickerPresets = document.getElementById('modePickerPresets');
+  const modePickerCancel = document.getElementById('modePickerCancel');
+  const modePickerApply = document.getElementById('modePickerApply');
   const modeArcPath = document.getElementById('modeArcPath');
-  const modeChoices = MODES.map((mode, index) => {
-    const choice = document.createElement('button');
-    choice.type = 'button';
-    choice.className = 'mode-choice';
-    choice.dataset.mode = String(index);
-    choice.textContent = mode.name;
-    modeWheel.appendChild(choice);
-    return choice;
-  });
+  let modeChoices = [];
+  let lastModePointerPress = null;
+  let ignoreModeClickUntil = 0;
+  function rebuildModeChoices() {
+    modeWheel.replaceChildren(modeArc);
+    modeChoices = MODES.map((mode, index) => {
+      const choice = document.createElement('button');
+      choice.type = 'button';
+      choice.className = 'mode-choice';
+      choice.dataset.mode = String(index);
+      choice.textContent = mode.name;
+      choice.title = `${mode.name}: ${intervalPatternLabel(mode.steps)}; double-click to choose a scale family`;
+      let offset = (index - modeIdx + MODES.length) % MODES.length;
+      if (offset > Math.floor(MODES.length / 2)) offset -= MODES.length;
+      if (Math.abs(offset) > 2) choice.classList.add('hidden-neighbor');
+      modeWheel.appendChild(choice);
+      return choice;
+    });
+  }
+  rebuildModeChoices();
 
   let keyIdx    = 0;
-  let modeIdx   = 0;
   let scaleData = buildScale(keyIdx, modeIdx);
   let modeRadius = 100;
   let modeDrag = null;
@@ -823,6 +1757,8 @@
   const TAIL      = 0.6;    /* normal ring-out after release (s) */
   const FAST_TAIL = 0.07;   /* ring-out when too many tails pile up (s) */
   const MAX_TAILS = 2;      /* chords allowed to ring out at once */
+  const AUDIO_OUTPUT_GAIN = 0.9;
+  const MODE_PICKER_FADE_SECONDS = 0.18;
   const tails     = [];     /* chords currently fading out, oldest first */
 
   function audio() {
@@ -830,7 +1766,7 @@
       ac = new (window.AudioContext || window.webkitAudioContext)();
 
       const master = ac.createGain();
-      master.gain.value = 0.9;
+      master.gain.value = AUDIO_OUTPUT_GAIN;
 
       const lim = ac.createDynamicsCompressor();
       lim.threshold.value = -6;
@@ -847,7 +1783,20 @@
     return ac;
   }
 
-  function startChord(midi, quality, vol) {
+  function fadeAudioOutput(targetGain) {
+    if (!ac || !bus) return;
+    const gain = bus.gain;
+    const now = ac.currentTime;
+    if (gain.cancelAndHoldAtTime) {
+      gain.cancelAndHoldAtTime(now);
+    } else {
+      gain.cancelScheduledValues(now);
+      gain.setValueAtTime(gain.value, now);
+    }
+    gain.linearRampToValueAtTime(targetGain, now + MODE_PICKER_FADE_SECONDS);
+  }
+
+  function startChord(midi, quality, vol, inversion = 0) {
     const ctx = audio();
     const t   = ctx.currentTime;
 
@@ -857,11 +1806,8 @@
     out.gain.setTargetAtTime(PEAK * vol * vol, t, 0.008);
     out.connect(bus);
 
-    const intervals = CHORD_TYPES[quality] || CHORD_TYPES.maj;
-    const weights   = [1.00, 0.85, 0.75, 0.65];
-
-    const parts = [{ s: -12, g: 0.45 }];
-    intervals.forEach((s, i) => parts.push({ s, g: weights[i] }));
+    const parts = chordVoicing(quality, inversion)
+      .map((part) => ({ s: part.semitones, g: part.weight }));
 
     /* normalise so a triad and a 7th chord have the same peak level */
     const total = parts.reduce((a, p) => a + p.g, 0);
@@ -989,6 +1935,18 @@
   function placeNote(el, slot) {
     el.dataset.slot    = String(slot);
     el.style.transform = `translateX(${slot * slotW}px)`;
+  }
+
+  function rebuildScaleNotes() {
+    notesEl.querySelectorAll('.note').forEach((el) => el.remove());
+    noteEls = scaleData.notes.map((name, slot) => {
+      const el = buildNote(name, scaleData.labels[slot]);
+      placeNote(el, slot);
+      notesEl.appendChild(el);
+      measureNoteBlob(el);
+      return el;
+    });
+    animating = false;
   }
 
   /* ================= blob measurement ================= */
@@ -1186,7 +2144,9 @@
       choice.setAttribute('aria-pressed', String(index === modeIdx));
     });
     modeWheel.setAttribute('aria-label',
-      KEYS[keyIdx].notes[0] + ' ' + MODES[modeIdx].name + ' mode selector; drag up or down to change mode');
+      KEYS[keyIdx].notes[0] + ' ' + MODES[modeIdx].name +
+      ' mode selector; drag up or down to change mode, or double-click a mode to choose a scale family');
+    modeWheel.classList.add('ready');
   }
 
   function selectMode(index) {
@@ -1195,11 +2155,450 @@
     modeIdx = nextMode;
     scaleData = buildScale(keyIdx, modeIdx);
     finishRightPreview();
-    stopPlaying();
-    if (held) releaseHold(true);
-    pending = null;
     noteEls.forEach((el, slot) => setNote(el, scaleData.notes[slot], scaleData.labels[slot]));
     updateModeWheel();
+    persistModeSelection();
+  }
+
+  function choosePickerDistribution(distribution) {
+    const currentFamily = MODE_FAMILY_BY_ID.get(pickerFamilyId);
+    const selectedFamilyId = currentFamily &&
+      currentFamily.distributionKey === distribution
+      ? currentFamily.id
+      : null;
+    pickerDistributionKey = distribution;
+    populateModeFamilies(pickerCardinality, selectedFamilyId);
+  }
+
+  function persistModeSelection() {
+    try {
+      localStorage.setItem(MODE_FAMILY_STORAGE_KEY, JSON.stringify({
+        familyId: activeModeFamily.id,
+        rootSteps: MODES[modeIdx].steps,
+      }));
+    } catch (error) {
+      console.warn('Unable to save the selected scale family.', error);
+    }
+  }
+
+  let pickerDistributionKey = null;
+  let pickerFamilyId = null;
+  let pickerCardinality = scaleCardinality;
+  let pickerSteps = null;
+  let pickerPresetModeName = null;
+  let modeSetDrag = null;
+  let modePickerPausedProgression = null;
+  let modePickerAudioWasRunning = false;
+  const MODE_FAMILY_COLORS = [
+    '#527c9b', '#a96f58', '#61886f', '#9a7baf', '#ad9146',
+    '#4c9290', '#b4647f', '#71814c', '#786a9b', '#a47742',
+    '#5986a9', '#8e765d',
+  ];
+
+  function scoreDistribution(distribution, cardinality) {
+    const averageStep = OCTAVE_SEMITONES / cardinality;
+    let penalty = 0;
+    for (let step = 1; step <= OCTAVE_SEMITONES; step++) {
+      const count = distribution[step];
+      penalty += count * (step - averageStep) ** 2;
+      if (step >= 5) {
+        penalty += count * 8 * (step - 4) ** 2;
+      }
+    }
+    return -penalty;
+  }
+
+  function getDistributionGroups(cardinality) {
+    const groups = new Map();
+    for (const family of MODE_FAMILIES_BY_CARDINALITY.get(cardinality) || []) {
+      if (!groups.has(family.distributionKey)) {
+        groups.set(family.distributionKey, {
+          key: family.distributionKey,
+          distribution: family.distribution,
+          families: [],
+        });
+      }
+      groups.get(family.distributionKey).families.push(family);
+    }
+    return Array.from(groups.values()).sort((a, b) => {
+      const scoreDifference =
+        scoreDistribution(b.distribution, cardinality) -
+        scoreDistribution(a.distribution, cardinality);
+      if (scoreDifference !== 0) return scoreDifference;
+      for (let step = 1; step <= OCTAVE_SEMITONES; step++) {
+        if (a.distribution[step] !== b.distribution[step]) {
+          return b.distribution[step] - a.distribution[step];
+        }
+      }
+      return 0;
+    });
+  }
+
+  function svgElement(name, attributes = {}) {
+    const element = document.createElementNS('http://www.w3.org/2000/svg', name);
+    for (const [key, value] of Object.entries(attributes)) {
+      element.setAttribute(key, String(value));
+    }
+    return element;
+  }
+
+  function smoothDistributionPath(distribution, cardinality) {
+    const left = 25, right = 292, top = 10, bottom = 121;
+    const points = Array.from({ length: OCTAVE_SEMITONES }, (_, index) => {
+      const step = index + 1;
+      return {
+        x: left + (step - 1) / (OCTAVE_SEMITONES - 1) * (right - left),
+        y: bottom - distribution[step] / cardinality * (bottom - top),
+      };
+    });
+    const spacing = points[1].x - points[0].x;
+    const secants = points.slice(0, -1).map((point, index) =>
+      (points[index + 1].y - point.y) / spacing);
+    const tangents = points.map((_, index) => {
+      if (index === 0) return secants[0];
+      if (index === points.length - 1) return secants[secants.length - 1];
+      const before = secants[index - 1];
+      const after = secants[index];
+      if (before === 0 || after === 0 || Math.sign(before) !== Math.sign(after)) return 0;
+      return (before + after) / 2;
+    });
+    for (let index = 0; index < secants.length; index++) {
+      const slope = secants[index];
+      if (slope === 0) {
+        tangents[index] = 0;
+        tangents[index + 1] = 0;
+        continue;
+      }
+      let alpha = tangents[index] / slope;
+      let beta = tangents[index + 1] / slope;
+      if (alpha < 0) {
+        tangents[index] = 0;
+        alpha = 0;
+      }
+      if (beta < 0) {
+        tangents[index + 1] = 0;
+        beta = 0;
+      }
+      const magnitude = alpha * alpha + beta * beta;
+      if (magnitude > 9) {
+        const scale = 3 / Math.sqrt(magnitude);
+        tangents[index] = scale * alpha * slope;
+        tangents[index + 1] = scale * beta * slope;
+      }
+    }
+
+    let path = `M ${points[0].x} ${points[0].y}`;
+    for (let index = 0; index < points.length - 1; index++) {
+      const current = points[index];
+      const next = points[index + 1];
+      const control1x = current.x + spacing / 3;
+      const control1y = current.y + tangents[index] * spacing / 3;
+      const control2x = next.x - spacing / 3;
+      const control2y = next.y - tangents[index + 1] * spacing / 3;
+      path += ` C ${control1x} ${control1y}, ${control2x} ${control2y}, ${next.x} ${next.y}`;
+    }
+    return { path, points };
+  }
+
+  function renderDistributionChart(cardinality, groups) {
+    modeFamilyChart.replaceChildren();
+    modeFamilyChart.setAttribute('viewBox', '0 0 300 160');
+    modeFamilyChart.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+
+    const top = 10, bottom = 121, left = 25, right = 292;
+    const maxCount = Math.max(1, cardinality);
+    for (let count = 0; count <= maxCount; count++) {
+      const y = bottom - count / maxCount * (bottom - top);
+      modeFamilyChart.appendChild(svgElement('line', {
+        x1: left, y1: y, x2: right, y2: y,
+        class: count === 0 ? 'mode-family-axis' : 'mode-family-grid',
+      }));
+      const tick = svgElement('text', {
+        x: left - 5, y: y + 3, 'text-anchor': 'end', class: 'mode-family-tick',
+      });
+      tick.textContent = String(count);
+      modeFamilyChart.appendChild(tick);
+    }
+    modeFamilyChart.append(
+      svgElement('line', { x1: left, y1: top, x2: left, y2: bottom, class: 'mode-family-axis' })
+    );
+    for (let step = 1; step <= OCTAVE_SEMITONES; step++) {
+      const x = left + (step - 1) / (OCTAVE_SEMITONES - 1) * (right - left);
+      const tick = svgElement('text', {
+        x, y: 138, 'text-anchor': 'middle', class: 'mode-family-tick',
+      });
+      tick.textContent = String(step);
+      modeFamilyChart.appendChild(tick);
+    }
+    const xLabel = svgElement('text', {
+      x: (left + right) / 2, y: 154, 'text-anchor': 'middle', class: 'mode-family-tick',
+    });
+    xLabel.textContent = 'step size (semitones)';
+    modeFamilyChart.appendChild(xLabel);
+    const yLabel = svgElement('text', {
+      x: 7, y: 66, transform: 'rotate(-90 7 66)',
+      'text-anchor': 'middle', class: 'mode-family-tick',
+    });
+    yLabel.textContent = 'count';
+    modeFamilyChart.appendChild(yLabel);
+
+    groups.forEach((group, index) => {
+      const color = MODE_FAMILY_COLORS[index % MODE_FAMILY_COLORS.length];
+      const { path, points } = smoothDistributionPath(group.distribution, cardinality);
+      const selected = group.key === pickerDistributionKey;
+      const curve = svgElement('path', {
+        d: path,
+        class: `mode-family-curve${selected ? ' selected' : ''}`,
+        stroke: color,
+        'data-distribution': group.key,
+      });
+      const hitTarget = svgElement('path', {
+        d: path,
+        class: 'mode-family-hit',
+        'data-distribution': group.key,
+        tabindex: 0,
+        role: 'button',
+        'aria-label': `Select set family ${distributionLabel(group.distribution)}`,
+        'aria-pressed': selected,
+      });
+      modeFamilyChart.append(curve, hitTarget);
+      if (selected) {
+        const circles = svgElement('g', { class: 'mode-family-points', stroke: color });
+        points.forEach((point, pointIndex) => {
+          if (!group.distribution[pointIndex + 1]) return;
+          circles.appendChild(svgElement('circle', {
+            cx: point.x, cy: point.y, r: 2.4,
+          }));
+        });
+        modeFamilyChart.appendChild(circles);
+      }
+    });
+
+  }
+
+  function updateModeSetDisplay(family, steps = family.steps, presetName = null) {
+    modeSetDisplay.setAttribute(
+      'aria-label',
+      `Current set: ${intervalPatternLabel(steps)}`,
+    );
+    renderModeSetSteps(steps);
+
+    const familyName = family.label.split(' — ').at(-1);
+    const namedSet = familyName && familyName !== 'Generated family'
+      ? familyName.replace(/ family$/, '')
+      : '';
+    modeSetName.textContent = presetName
+      ? `“${presetName}”`
+      : namedSet && namedSet !== intervalPatternLabel(steps)
+      ? `“${namedSet}”`
+      : '';
+  }
+
+  function renderModeSetSteps(steps, changedIndexes = null) {
+    modeSetDisplay.replaceChildren();
+    steps.forEach((step, index) => {
+      const interval = document.createElement('span');
+      interval.className = 'mode-set-step';
+      interval.dataset.index = String(index);
+      interval.style.setProperty('--step', String(step));
+      interval.textContent = String(step);
+      interval.setAttribute(
+        'aria-label',
+        `${step} semitone${step === 1 ? '' : 's'}`,
+      );
+      modeSetDisplay.appendChild(interval);
+      if (changedIndexes?.has(index) &&
+          !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        interval.animate([
+          {
+            opacity: 0.7,
+            transform: 'translateY(2px) scale(.96)',
+          },
+          { opacity: 1, transform: 'translateY(0) scale(1)' },
+        ], {
+          duration: 180,
+          easing: 'cubic-bezier(.2,.8,.2,1)',
+        });
+      }
+    });
+  }
+
+  function selectPickerFamily(familyId) {
+    const family = MODE_FAMILY_BY_ID.get(familyId);
+    if (!family) throw new Error('Selected scale family is unavailable: ' + familyId);
+    pickerFamilyId = family.id;
+    pickerSteps = family.steps.slice();
+    pickerPresetModeName = null;
+    updateModeSetDisplay(family, pickerSteps);
+  }
+
+  function cyclePickerFamily(direction) {
+    const families = (MODE_FAMILIES_BY_CARDINALITY.get(
+      pickerCardinality,
+    ) || [])
+      .filter((family) => family.distributionKey === pickerDistributionKey)
+      .sort((a, b) => a.label.localeCompare(b.label));
+    const currentIndex = families.findIndex((family) => family.id === pickerFamilyId);
+    if (!families.length || currentIndex < 0) return;
+    const nextIndex = (currentIndex + direction + families.length) % families.length;
+    selectPickerFamily(families[nextIndex].id);
+  }
+
+  function populateModeFamilies(cardinality, selectedFamilyId = null) {
+    pickerCardinality = cardinality;
+    modeCardinalityValue.textContent = String(cardinality);
+    modeCardinalityPrevious.disabled = cardinality <= MIN_SCALE_CARDINALITY;
+    modeCardinalityNext.disabled = cardinality >= OCTAVE_SEMITONES;
+    const groups = getDistributionGroups(cardinality);
+    const families = MODE_FAMILIES_BY_CARDINALITY.get(cardinality) || [];
+    const requestedFamily = selectedFamilyId
+      ? families.find((family) => family.id === selectedFamilyId)
+      : null;
+    const selectedGroup = requestedFamily
+      ? groups.find((group) => group.key === requestedFamily.distributionKey)
+      : groups.find((group) => group.key === pickerDistributionKey) || groups[0];
+    if (!selectedGroup) {
+      throw new Error('No interval families available for cardinality ' + cardinality);
+    }
+    pickerDistributionKey = selectedGroup.key;
+    renderDistributionChart(cardinality, groups);
+    const defaultFamily = selectedGroup.families.find((family) =>
+      family.id === (selectedFamilyId || activeModeFamily.id)) || selectedGroup.families[0];
+    if (!defaultFamily) {
+      throw new Error('No interval families available for cardinality ' + cardinality);
+    }
+    selectPickerFamily(defaultFamily.id);
+  }
+
+  function namedPresetFamilyLabel(mode) {
+    const steps = intervalSteps(mode);
+    const familyId = canonicalSteps(steps).join(',');
+    const family = MODE_FAMILY_BY_ID.get(familyId);
+    const familyName = family?.label.split(' — ').at(-1);
+    if (mode.family && mode.family !== mode.name) {
+      return `${mode.family} Set`;
+    }
+    if (familyName && familyName !== 'Generated family' &&
+        !/^\d+$/.test(familyName)) {
+      return familyName.replace(/\bset\b/i, 'Set');
+    }
+    return `${mode.name} Family`;
+  }
+
+  function populateNamedScalePresets() {
+    modePickerPresets.replaceChildren();
+    const groups = new Map();
+    for (const mode of NAMED_SCALE_PRESETS) {
+      const cardinality = mode.intervals.length;
+      if (!groups.has(cardinality)) groups.set(cardinality, new Map());
+      const familyName = namedPresetFamilyLabel(mode);
+      const families = groups.get(cardinality);
+      if (!families.has(familyName)) families.set(familyName, []);
+      families.get(familyName).push(mode);
+    }
+
+    for (const [cardinality, families] of groups) {
+      const heading = document.createElement('h3');
+      heading.textContent = `Cardinality ${cardinality}`;
+      modePickerPresets.appendChild(heading);
+      for (const [familyName, modes] of Array.from(families.entries())
+        .sort(([a], [b]) => a.localeCompare(b))) {
+        const familyHeading = document.createElement('h4');
+        familyHeading.textContent = familyName;
+        modePickerPresets.appendChild(familyHeading);
+        for (const mode of modes.sort((a, b) => a.name.localeCompare(b.name))) {
+          const option = document.createElement('button');
+          option.type = 'button';
+          option.className = 'mode-preset-scale';
+          option.textContent = mode.name;
+          option.addEventListener('click', () => selectNamedScalePreset(mode));
+          modePickerPresets.appendChild(option);
+        }
+      }
+    }
+  }
+
+  function selectNamedScalePreset(mode) {
+    const steps = intervalSteps(mode);
+    const familyId = canonicalSteps(steps).join(',');
+    const family = MODE_FAMILY_BY_ID.get(familyId);
+    if (!family) {
+      throw new Error('Named scale preset is unavailable: ' + mode.name);
+    }
+    populateModeFamilies(steps.length, family.id);
+    pickerSteps = steps;
+    pickerPresetModeName = mode.name;
+    updateModeSetDisplay(family, pickerSteps, mode.name);
+    modePickerPresets.hidden = true;
+    modePickerPresetsToggle.setAttribute('aria-expanded', 'false');
+    modePickerPresetsToggle.focus();
+  }
+
+  function openModePicker() {
+    if (!modePicker.hidden) return;
+    populateModeFamilies(scaleCardinality, activeModeFamily.id);
+    modePickerPausedProgression = pauseProgressionPlaybackForModePicker();
+    modePickerAudioWasRunning = !!ac && ac.state === 'running';
+    if (modePickerAudioWasRunning) fadeAudioOutput(0);
+    modePickerBackdrop.hidden = false;
+    modePicker.hidden = false;
+    modePickerBackgroundStates = Array.from(document.body.children)
+      .filter((element) => element !== modePicker && element !== modePickerBackdrop)
+      .map((element) => {
+        const wasInert = element.inert;
+        element.inert = true;
+        return { element, wasInert };
+      });
+  }
+
+  function changePickerCardinality(direction) {
+    const cardinality = Math.max(
+      MIN_SCALE_CARDINALITY,
+      Math.min(OCTAVE_SEMITONES, pickerCardinality + direction),
+    );
+    if (cardinality !== pickerCardinality) populateModeFamilies(cardinality);
+  }
+
+  function closeModePicker() {
+    modePicker.hidden = true;
+    modePickerBackdrop.hidden = true;
+    modePickerPresets.hidden = true;
+    modePickerPresetsToggle.setAttribute('aria-expanded', 'false');
+    for (const { element, wasInert } of modePickerBackgroundStates || []) {
+      element.inert = wasInert;
+    }
+    modePickerBackgroundStates = null;
+    const pausedProgression = modePickerPausedProgression;
+    modePickerPausedProgression = null;
+    if (modePickerAudioWasRunning && ac && ac.state === 'running') {
+      fadeAudioOutput(AUDIO_OUTPUT_GAIN);
+    }
+    resumeProgressionPlaybackAfterModePicker(pausedProgression);
+    modePickerAudioWasRunning = false;
+  }
+
+  function applyModeFamily() {
+    const family = MODE_FAMILY_BY_ID.get(pickerFamilyId);
+    if (!family) {
+      throw new Error('Selected scale family is unavailable: ' + pickerFamilyId);
+    }
+    activeModeFamily = family;
+    scaleCardinality = family.cardinality;
+    MODES = family.modes;
+    const presetIndex = pickerPresetModeName
+      ? family.modes.findIndex((mode) => mode.name === pickerPresetModeName)
+      : -1;
+    modeIdx = presetIndex >= 0 ? presetIndex : defaultModeIndex(family);
+    scaleData = buildScale(keyIdx, modeIdx);
+    finishClickPreview();
+    finishRightPreview();
+    clearLatchedChord();
+    rebuildModeChoices();
+    updateModeWheel(false);
+    rebuildScaleNotes();
+    layout();
+    persistModeSelection();
+    closeModePicker();
   }
 
   /* ================= sliding ================= */
@@ -1222,7 +2621,7 @@
   }
 
   function shift(moveLeft) {
-    if (animating || noteEls.length !== 8) return;
+    if (animating || noteEls.length !== scaleCardinality + 1) return;
     animating = true;
 
     keyIdx = (keyIdx + (moveLeft ? 1 : -1) + KEYS.length) % KEYS.length;
@@ -1233,16 +2632,17 @@
     const names = scaleData.notes;
     const labels = scaleData.labels;
     const old   = noteEls.slice();
-    const next  = new Array(8);
+    const noteCount = old.length;
+    const lastSlot = noteCount - 1;
+    const next  = new Array(noteCount);
 
     if (moveLeft) {
       const ex = old[0];
-      if (held && held.el === ex) releaseHold();
       ex._dying = true;
       ex.style.pointerEvents = 'none';
       slide(ex, 'translateX(0px)', `translateX(${-slotW}px)`, 1, 0, () => ex.remove());
 
-      for (let i = 1; i < 8; i++) {
+      for (let i = 1; i < noteCount; i++) {
         const el      = old[i];
         const newSlot = i - 1;
         setNote(el, names[newSlot], labels[newSlot]);
@@ -1251,26 +2651,25 @@
         next[newSlot] = el;
       }
 
-      const el = buildNote(names[7], labels[7]);
+      const el = buildNote(names[lastSlot], labels[lastSlot]);
       el.style.pointerEvents = 'none';
       el.style.opacity       = '0';
-      el.style.transform     = `translateX(${8 * slotW}px)`;
+      el.style.transform     = `translateX(${noteCount * slotW}px)`;
       notesEl.appendChild(el);
-      placeNote(el, 7);
+      placeNote(el, lastSlot);
       measureNoteBlob(el);
-      slide(el, `translateX(${8 * slotW}px)`, `translateX(${7 * slotW}px)`, 0, 1, () => {
+      slide(el, `translateX(${noteCount * slotW}px)`, `translateX(${lastSlot * slotW}px)`, 0, 1, () => {
         el.style.pointerEvents = '';
       });
-      next[7] = el;
+      next[lastSlot] = el;
 
     } else {
-      const ex = old[7];
-      if (held && held.el === ex) releaseHold();
+      const ex = old[lastSlot];
       ex._dying = true;
       ex.style.pointerEvents = 'none';
-      slide(ex, `translateX(${7 * slotW}px)`, `translateX(${8 * slotW}px)`, 1, 0, () => ex.remove());
+      slide(ex, `translateX(${lastSlot * slotW}px)`, `translateX(${noteCount * slotW}px)`, 1, 0, () => ex.remove());
 
-      for (let i = 0; i < 7; i++) {
+      for (let i = 0; i < lastSlot; i++) {
         const el      = old[i];
         const newSlot = i + 1;
         setNote(el, names[newSlot], labels[newSlot]);
@@ -1319,8 +2718,6 @@
   let dashedAlpha = 0;
 
   const solid = { x: 0, y: 0, r: 0, init: false, alpha: 0 };
-
-  let held = null;
 
   const clamp = (v, lo, hi) => v < lo ? lo : v > hi ? hi : v;
 
@@ -1474,16 +2871,13 @@
     return best;
   }
 
-  /* ---------- hover playback + press & hold ---------- */
+  /* ---------- click playback ---------- */
 
-  let playing = null;   /* chord sounding because the pointer is near it */
-  let entryMode = 'latch';
   let latchedChord = null;
+  let heldInversion = null;
   let activeNotePlaybackEnabled = true;
   let clickPreview = null;
   let rightPreview = null;
-
-  const sigOf = (el) => keyIdx + ':' + modeIdx + ':' + el.dataset.slot;
 
   function blobCenter(el) {
     const r = el.getBoundingClientRect();
@@ -1497,9 +2891,14 @@
   const volEl    = document.getElementById('vol');
   const volThumb = document.getElementById('volThumb');
 
-  function showVolume() {
-    const trackW = 140, thumbW = 5;
+  function updateVolumeDisplay() {
+    const trackW = volEl.clientWidth, thumbW = volThumb.offsetWidth;
     volThumb.style.left = (masterVol * (trackW - thumbW)).toFixed(1) + 'px';
+    volEl.setAttribute('aria-valuenow', String(Math.round(masterVol * 100)));
+  }
+
+  function showVolume() {
+    updateVolumeDisplay();
     volEl.classList.add('show');
     clearTimeout(volHideT);
     volHideT = setTimeout(() => volEl.classList.remove('show'), 1100);
@@ -1507,8 +2906,6 @@
 
   function setMasterVol(v) {
     masterVol = clamp(v, 0, 1);
-    if (held)    held.handle.setVolume(masterVol);
-    if (playing) playing.handle.setVolume(masterVol);
     if (latchedChord && latchedChord.handle) latchedChord.handle.setVolume(masterVol);
     if (clickPreview) clickPreview.handle.setVolume(masterVol);
     if (rightPreview) rightPreview.handle.setVolume(masterVol);
@@ -1517,6 +2914,48 @@
     }
     showVolume();
   }
+
+  let volumePointerId = null;
+  function setVolumeFromPointer(clientX) {
+    const rect = volEl.getBoundingClientRect();
+    const thumbW = volThumb.offsetWidth;
+    const rangeW = rect.width - thumbW;
+    setMasterVol(rangeW > 0 ? (clientX - rect.left - thumbW / 2) / rangeW : 0);
+  }
+
+  function finishVolumeDrag(event) {
+    if (volumePointerId !== event.pointerId) return;
+    volumePointerId = null;
+    volEl.classList.remove('dragging');
+    if (volEl.hasPointerCapture(event.pointerId)) {
+      volEl.releasePointerCapture(event.pointerId);
+    }
+  }
+
+  volEl.addEventListener('pointerdown', (event) => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    volumePointerId = event.pointerId;
+    volEl.classList.add('dragging');
+    volEl.setPointerCapture(event.pointerId);
+    setVolumeFromPointer(event.clientX);
+  });
+  volEl.addEventListener('pointermove', (event) => {
+    if (volumePointerId === event.pointerId) setVolumeFromPointer(event.clientX);
+  });
+  volEl.addEventListener('pointerup', finishVolumeDrag);
+  volEl.addEventListener('pointercancel', finishVolumeDrag);
+  volEl.addEventListener('lostpointercapture', finishVolumeDrag);
+  volEl.addEventListener('keydown', (event) => {
+    event.stopPropagation();
+    const steps = { ArrowLeft: -0.01, ArrowDown: -0.01, ArrowRight: 0.01, ArrowUp: 0.01,
+      PageDown: -0.1, PageUp: 0.1 };
+    if (event.key === 'Home') setMasterVol(0);
+    else if (event.key === 'End') setMasterVol(1);
+    else if (Object.hasOwn(steps, event.key)) setMasterVol(masterVol + steps[event.key]);
+    else return;
+    event.preventDefault();
+  });
 
   window.addEventListener('wheel', (e) => {
     if (!histPopover.hidden && histPopover.contains(e.target)) return;
@@ -1529,22 +2968,12 @@
     setMasterVol(masterVol - d * WHEEL_K);   /* scroll up = louder */
   }, { passive: false });
 
-  volThumb.style.left = (masterVol * 135).toFixed(1) + 'px';
-
-  function startFor(el, vol) {
-    const slot = Number(el.dataset.slot);
-    return startChord(KEYS[keyIdx].midi + scaleData.intervals[slot], scaleData.qualities[slot], vol);
-  }
-
-  function stopPlaying() {
-    if (!playing) return;
-    playing.handle.release();
-    playing = null;
-  }
+  updateVolumeDisplay();
 
   function finishClickPreview(event = null) {
     if (!clickPreview) return;
-    if (event && clickPreview.pointerId !== event.pointerId) return;
+    if (event && clickPreview.pointerId != null &&
+        clickPreview.pointerId !== event.pointerId) return;
     clickPreview.handle.release();
     if (clickPreview.el) clickPreview.el.classList.remove('pressed');
     clickPreview = null;
@@ -1561,7 +2990,8 @@
     if (!latchedChord || latchedChord.el._dying) return false;
     if (shouldPlay && !latchedChord.handle) {
       latchedChord.handle = startChord(
-        latchedChord.chord.midi, latchedChord.chord.type, masterVol);
+        latchedChord.chord.midi, latchedChord.chord.type, masterVol,
+        latchedChord.chord.inversion || 0);
       latchedChord.el.classList.add('pressed');
       return true;
     } else if (!shouldPlay && latchedChord.handle) {
@@ -1573,18 +3003,10 @@
     return false;
   }
 
-  const playbackIndicator = document.getElementById('playbackIndicator');
-  let playbackIndicatorTimer = 0;
-
-  function showPlaybackIndicator(isPlaying) {
-    playbackIndicator.textContent = isPlaying ? '\u25b6' : '\u23f8';
-    playbackIndicator.classList.remove('show');
-    void playbackIndicator.offsetWidth;
-    playbackIndicator.classList.add('show');
-    clearTimeout(playbackIndicatorTimer);
-    playbackIndicatorTimer = setTimeout(() => {
-      playbackIndicator.classList.remove('show');
-    }, 920);
+  function updateNotePlaybackButton() {
+    notePlaybackToggle.setAttribute('aria-label',
+      activeNotePlaybackEnabled ? 'Mute active-note playback' : 'Unmute active-note playback');
+    notePlaybackToggle.setAttribute('aria-pressed', String(activeNotePlaybackEnabled));
   }
 
   function toggleLatchedPlayback() {
@@ -1593,7 +3015,7 @@
     if (progressionPlayback) cancelProgressionPlayback();
     activeNotePlaybackEnabled = !activeNotePlaybackEnabled;
     setLatchedChordPlaying(activeNotePlaybackEnabled);
-    showPlaybackIndicator(activeNotePlaybackEnabled);
+    updateNotePlaybackButton();
   }
 
   function finishRightPreview(restoreLatched = true, event = null) {
@@ -1602,7 +3024,7 @@
     rightPreview.handle.release();
     const resumeLatched = rightPreview.resumeLatched;
     rightPreview = null;
-    if (restoreLatched && resumeLatched && entryMode === 'latch') setLatchedChordPlaying(true);
+    if (restoreLatched && resumeLatched) setLatchedChordPlaying(true);
   }
 
   function chordAtPoint(x, y) {
@@ -1619,21 +3041,22 @@
   }
 
   function latchChord(selection, event) {
+    const chord = chordWithHeldInversion(selection.chord);
+    if (!chord) return;
     const keepPlaying = activeNotePlaybackEnabled;
     finishRightPreview(false);
     finishClickPreview();
     if (latchedChord && latchedChord.handle) latchedChord.handle.release();
     if (latchedChord && latchedChord.el) latchedChord.el.classList.remove('pressed');
     latchedChord = null;
-    stopPlaying();
-    if (held) releaseHold(true);
-    const chord = { ...selection.chord };
     latchedChord = {
       el: selection.el,
-      sig: sigOf(selection.el),
       target: selection.target,
+      targetId: chord.id,
       chord,
-      handle: keepPlaying ? startChord(chord.midi, chord.type, masterVol) : null,
+      handle: keepPlaying
+        ? startChord(chord.midi, chord.type, masterVol, chord.inversion)
+        : null,
     };
     if (keepPlaying) {
       selection.el.classList.add('pressed');
@@ -1641,7 +3064,7 @@
       clickPreview = {
         el: selection.el,
         pointerId: event.pointerId,
-        handle: startChord(chord.midi, chord.type, masterVol),
+        handle: startChord(chord.midi, chord.type, masterVol, chord.inversion),
       };
       selection.el.classList.add('pressed');
     }
@@ -1649,200 +3072,89 @@
   }
 
   function previewRightClick(selection, event) {
+    const chord = chordWithHeldInversion(selection.chord);
+    if (!chord) return;
+    if (rightPreview && rightPreview.el === selection.el &&
+        rightPreview.targetId === chord.id &&
+        rightPreview.chord.inversion === chord.inversion) return;
     finishClickPreview();
+    const resumeLatched = rightPreview
+      ? rightPreview.resumeLatched
+      : activeNotePlaybackEnabled;
     if (rightPreview) {
       rightPreview.handle.release();
       rightPreview = null;
     }
-    const resumeLatched = activeNotePlaybackEnabled;
     setLatchedChordPlaying(false);
-    stopPlaying();
-    if (held) releaseHold(true);
     rightPreview = {
       el: selection.el,
       target: selection.target,
-      chord: selection.chord,
+      targetId: chord.id,
+      chord,
       pointerId: event.pointerId,
       resumeLatched,
-      handle: startChord(selection.chord.midi, selection.chord.type, masterVol),
+      handle: startChord(chord.midi, chord.type, masterVol, chord.inversion),
     };
   }
 
-  const SWITCH_DWELL = 35;   /* ms the pointer must settle before the sound moves on */
-  let pending = null;
-
-  /* hover mode: the selected chord (or target) plays at the master volume */
-  function updateAudio() {
-    if (entryMode === 'latch') {
-      pending = null;
-      stopPlaying();
-      return;
-    }
-    if (!ac || ac.state !== 'running' || held || progressionPlayback) { pending = null; return; }
-
-    if (!tSel.el) { pending = null; stopPlaying(); return; }
-
-    const el = tSel.el, k = tSel.k, sig = sigOf(el);
-    if (playing && playing.el === el && playing.sig === sig && playing.target === k) {
-      pending = null;
-      playing.handle.setVolume(masterVol);
-      return;
-    }
-
-    /* something is already sounding: only move on once the pointer has
-       settled on the new chord, so sweeping across several chords doesn't
-       machine-gun them */
-    if (playing) {
-      const now = performance.now();
-      if (!pending || pending.el !== el || pending.sig !== sig || pending.k !== k) {
-        pending = { el, sig, k, t: now };
-        return;
-      }
-      if (now - pending.t < SWITCH_DWELL) return;
-    }
-
-    pending = null;
-    stopPlaying();
-    playing = { el, sig, target: k,
-                handle: k ? startTarget(el, k) : startFor(el, masterVol) };
-    logChord(el, k);
+  function updateRightPreviewInversion() {
+    if (!rightPreview) return;
+    previewRightClick({
+      el: rightPreview.el,
+      target: rightPreview.target,
+      chord: rightPreview.chord,
+    }, { pointerId: rightPreview.pointerId });
   }
 
   function syncPlayingClass() {
     for (let i = 0; i < noteEls.length; i++) {
       const el = noteEls[i];
       el.classList.toggle('playing',
-        !!((held && held.el === el) || (playing && playing.el === el) ||
-          (latchedChord && latchedChord.handle && latchedChord.el === el && !rightPreview) ||
+        !!((latchedChord && latchedChord.handle && latchedChord.el === el && !rightPreview) ||
           (clickPreview && clickPreview.el === el) ||
           (rightPreview && rightPreview.el === el)));
     }
   }
 
-  /* press & hold: lock the chord until release */
-  function startHold(el, touch, px, py) {
-    if (held) releaseHold(true);
-
-    let handle, tk = 0;
-    if (playing && playing.el === el && playing.sig === sigOf(el)) {
-      handle = playing.handle;      /* keep the sounding chord, just freeze it */
-      tk = playing.target || 0;
-      playing = null;
-      handle.setVolume(masterVol);
-    } else {
-      stopPlaying();
-      tk = (tSel.el === el) ? tSel.k : 0;
-      handle = tk ? startTarget(el, tk) : startFor(el, masterVol);
-      logChord(el, tk);
-    }
-
-    held = { el, handle, sig: sigOf(el), touch, target: tk, armed: false, px0: px, py0: py };
-
-    if (chord.init && chord.el === el && dashedAlpha > 0.05) {
-      solid.x = chord.x;
-      solid.y = chord.y;
-      solid.r = chord.r;
-      solid.init = true;
-    } else {
-      solid.init = false;
-    }
-
-    clearTimeout(el._releaseT);
-    el.classList.add('pressed');
-  }
-
-  /* on release the held chord hands over to hover mode, which then
-     moves to whichever chord is currently closest (or stops if none) */
-  function releaseHold(noTransfer) {
-    if (!held) return;
-    const h = held;
-    held = null;
-
-    clearTimeout(h.el._releaseT);
-    h.el._releaseT = setTimeout(() => h.el.classList.remove('pressed'), 140);
-
-    const canHand = !noTransfer && !h.touch && pointer.active;
-    const sel = (canHand && tSel.el && !tSel.el._dying && tSel.k > 0)
-      ? { el: tSel.el, k: tSel.k } : null;
-
-    if (sel) {
-      /* released over a target line: lock onto that chord instead */
-      let handle;
-      if (sel.el === h.el && sel.k === h.target && h.sig === sigOf(h.el)) {
-        handle = h.handle;
-      } else {
-        h.handle.release();
-        handle = startTarget(sel.el, sel.k);
-        logChord(sel.el, sel.k);
-      }
-      playing = { el: sel.el, sig: sigOf(sel.el), target: sel.k, handle };
-    } else if (canHand && !h.el._dying && h.target === 0) {
-      playing = { el: h.el, sig: h.sig, target: 0, handle: h.handle };
-    } else {
-      h.handle.release();
-    }
-  }
-
   function onPointerDown(e) {
-    if (e.button !== 0 &&
-        !(entryMode === 'latch' && (e.button === 1 || e.button === 2))) return;
+    if (e.button !== 0 && e.button !== 1 && e.button !== 2) return;
 
     const tgt = e.target;
+    if (!settingsPanel.hidden && !settingsPanel.contains(tgt) && !settingsToggle.contains(tgt)) {
+      closeTargetSettings();
+    }
+    if (tgt && tgt.closest && (tgt.closest('.settings-panel') || tgt.closest('.settings-toggle') ||
+        tgt.closest('.mode-picker'))) return;
     if (tgt && tgt.closest && tgt.closest('.arrow')) return;
-    if (tgt && tgt.closest && (tgt.closest('.histbar') || tgt.closest('.mode-wheel'))) return;
+    if (tgt && tgt.closest && (tgt.closest('.histbar') || tgt.closest('.mode-wheel') ||
+        tgt.closest('.note-playback-toggle') || tgt.closest('.piano-toggle') ||
+        tgt.closest('.vol'))) return;
 
     const touch = e.pointerType === 'touch';
-    dragPt.x = e.clientX;
-    dragPt.y = e.clientY;
     if (!touch) {
       pointer.x = e.clientX;
       pointer.y = e.clientY;
       pointer.active = true;
     }
 
-    audio();   /* first gesture unlocks sound for hover playback */
+    audio();
 
-    if (entryMode === 'latch') {
-      e.preventDefault();
-      if (e.button === 1) {
-        toggleLatchedPlayback();
-        return;
-      }
-      const selection = e.clientY <= cutoffY
-        ? chordAtPoint(e.clientX, e.clientY)
-        : null;
-      if (!selection) {
-        if (e.button === 2) return;
-        if (progressionPlayback) {
-          cancelProgressionPlayback();
-        }
-        stopPlaying();
-        pending = null;
-        if (held) releaseHold(true);
-        return;
-      }
-      if (e.button === 2) previewRightClick(selection, e);
-      else latchChord(selection, e);
+    if (e.button !== 2) e.preventDefault();
+    if (e.button === 1) {
+      toggleLatchedPlayback();
       return;
     }
 
-    if (e.clientY > cutoffY) return;
-
-    let el = null;
-    if (playing && !touch && !playing.el._dying) {
-      el = playing.el;
-    } else {
-      const hit = tgt && tgt.closest ? tgt.closest('.note') : null;
-      if (hit && !hit._dying && hit._blob) {
-        el = hit;
-      } else {
-        const near = nearestNote(null, e.clientX, e.clientY);
-        if (near && near.d2 <= interactDist * interactDist) el = near.el;
-      }
+    const selection = e.clientY <= cutoffY
+      ? chordAtPoint(e.clientX, e.clientY)
+      : null;
+    if (!selection) {
+      if (e.button === 2) return;
+      if (progressionPlayback) cancelProgressionPlayback();
+      return;
     }
-
-    if (!el) return;
-    startHold(el, touch, e.clientX, e.clientY);
+    if (e.button === 2) previewRightClick(selection, e);
+    else latchChord(selection, e);
   }
 
   function onPointerUp(e) {
@@ -1852,27 +3164,73 @@
     }
     finishClickPreview(e);
     finishRightPreview(true, e);
-    releaseHold(false);
   }
 
   /* ---------- chord targets (shown while click-dragging) ---------- */
 
-  const dragPt = { x: 0, y: 0 };   /* latest pointer position, any pointer type */
-
   const tGroup = document.getElementById('targets');
-  const tEls = [1, 2, 3, 4].map((i) => ({
-    line: document.getElementById('tl' + i),
-    name: document.getElementById('tn' + i),
-    rom:  document.getElementById('tr' + i),
-    key:  '',
-  }));
+  const TARGET_DEFINITIONS = [
+    { id: 'diminished', name: 'Leading-tone diminished', detail: 'vii°7 of the selected chord' },
+    { id: 'tritone', name: 'Tritone substitution', detail: 'SubV7 of the selected chord' },
+    { id: 'modal', name: 'Modal interchange', detail: 'Borrowed chord from the parallel scale' },
+    { id: 'secondary-dominant', name: 'Secondary dominant', detail: 'V7 of the selected chord' },
+    { id: 'secondary-supertonic', name: 'Secondary ii chord', detail: 'ii7 preceding the selected chord' },
+    { id: 'dominant-sus', name: 'Suspended dominant', detail: 'V7sus4 of the selected chord' },
+    { id: 'dominant-flat-nine', name: 'Flat-nine dominant', detail: 'V7♭9 of the selected chord' },
+    { id: 'dominant-sharp-five', name: 'Sharp-five dominant', detail: 'V7♯5 of the selected chord' },
+    { id: 'backdoor-dominant', name: 'Backdoor dominant', detail: '♭VII7 approach to the selected chord' },
+    { id: 'dominant-sharp-nine', name: 'Sharp-nine dominant', detail: 'V7♯9 of the selected chord' },
+    { id: 'dominant-flat-five', name: 'Flat-five dominant', detail: 'V7♭5 of the selected chord' },
+    { id: 'minor-plagal', name: 'Minor plagal chord', detail: 'ivm7 approach to the selected chord' },
+  ];
+  const TARGET_DEFAULTS = ['secondary-dominant', 'modal', 'tritone', 'diminished'];
+  const TARGET_SETTINGS_KEY = 'chord-explorer-target-settings-v1';
+  const pianoToggleForTargets = document.getElementById('pianoToggle');
+  let targetSafeTop = 24;
+  const targetDefinitions = new Map(TARGET_DEFINITIONS.map((definition) =>
+    [definition.id, definition]));
+  let enabledTargetIds = TARGET_DEFAULTS.slice();
+  try {
+    const savedTargets = JSON.parse(localStorage.getItem(TARGET_SETTINGS_KEY) || 'null');
+    if (Array.isArray(savedTargets) &&
+        savedTargets.every((id) => typeof id === 'string' && targetDefinitions.has(id)) &&
+        new Set(savedTargets).size === savedTargets.length) {
+      enabledTargetIds = savedTargets;
+    }
+  } catch (error) {
+    console.warn('Unable to load chord target settings.', error);
+  }
+  let tEls = [];
+
+  function createTargetRow() {
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    const name = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    const rom = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    line.setAttribute('class', 'tline');
+    name.setAttribute('class', 'tname');
+    name.setAttribute('text-anchor', 'middle');
+    rom.setAttribute('class', 'trom');
+    rom.setAttribute('text-anchor', 'middle');
+    tGroup.append(line, name, rom);
+    return { line, name, rom, key: '' };
+  }
+
+  function syncTargetRows() {
+    while (tEls.length < enabledTargetIds.length) tEls.push(createTargetRow());
+    while (tEls.length > enabledTargetIds.length) {
+      const row = tEls.pop();
+      row.line.remove();
+      row.name.remove();
+      row.rom.remove();
+    }
+  }
+
+  syncTargetRows();
   let tAlpha = 0, tEl = null;
 
   const pcName = (midi, flats) =>
     (flats ? FLAT_N : SHARP_N)[((midi % 12) + 12) % 12];
 
-  /* [0] diatonic, [1] secondary dominant, [2] modal interchange,
-     [3] tritone sub, [4] leading-tone dim7 */
   function targetsFor(el) {
     const slot = Number(el.dataset.slot);
     const key  = KEYS[keyIdx];
@@ -1882,37 +3240,73 @@
 
     const dia = { midi: root, type: q,
                   name: scaleData.notes[slot] + TYPE_SUFFIX[q],
-                  roman: scaleData.labels[slot] };
+                  roman: scaleData.labels[slot], id: 'diatonic' };
 
-    const sdRoot = root - 5;   /* a fifth above, dropped an octave to stay in register */
-    const sd = { midi: sdRoot, type: 'dom7',
-                 name: pcName(sdRoot, sp.sd) + '7',
-                 roman: 'V7/' + scaleData.labels[slot] };
+    const dominantRoot = root - 5;
+    const modal = MODAL[slot % MODAL.length];
+    const makeTarget = (id, midi, type, suffix, roman, flats) => ({
+      id, midi, type, name: pcName(midi, flats) + suffix, roman,
+    });
+    const availableTargets = {
+      diminished: makeTarget('diminished', root - 1, 'dim7', 'dim7',
+        'vii\u00b07/' + scaleData.labels[slot], sp.ld),
+      tritone: makeTarget('tritone', root + 1, 'dom7', '7',
+        'subV7/' + scaleData.labels[slot], sp.ts),
+      modal: {
+        id: 'modal',
+        midi: key.midi + modal.off,
+        type: modal.type,
+        name: pcName(key.midi + modal.off, sp.mi) + TYPE_SUFFIX[modal.type],
+        roman: modal.roman,
+      },
+      'secondary-dominant': makeTarget('secondary-dominant', dominantRoot, 'dom7', '7',
+        'V7/' + scaleData.labels[slot], sp.sd),
+      'secondary-supertonic': makeTarget('secondary-supertonic', root - 2, 'm7', 'm7',
+        'ii7/' + scaleData.labels[slot], sp.sd),
+      'dominant-sus': makeTarget('dominant-sus', dominantRoot, 'dom7sus4', '7sus4',
+        'V7sus4/' + scaleData.labels[slot], sp.sd),
+      'dominant-flat-nine': makeTarget('dominant-flat-nine', dominantRoot, 'dom7b9', '7\u266d9',
+        'V7\u266d9/' + scaleData.labels[slot], sp.sd),
+      'dominant-sharp-five': makeTarget('dominant-sharp-five', dominantRoot, 'dom7sharp5', '7\u266f5',
+        'V7\u266f5/' + scaleData.labels[slot], sp.sd),
+      'backdoor-dominant': makeTarget('backdoor-dominant', root - 2, 'dom7', '7',
+        '\u266dVII7/' + scaleData.labels[slot], true),
+      'dominant-sharp-nine': makeTarget('dominant-sharp-nine', dominantRoot, 'dom7sharp9', '7\u266f9',
+        'V7\u266f9/' + scaleData.labels[slot], sp.sd),
+      'dominant-flat-five': makeTarget('dominant-flat-five', dominantRoot, 'dom7flat5', '7\u266d5',
+        'V7\u266d5/' + scaleData.labels[slot], sp.sd),
+      'minor-plagal': makeTarget('minor-plagal', root + 5, 'm7', 'm7',
+        'ivm7/' + scaleData.labels[slot], sp.mi),
+    };
 
-    const m = MODAL[slot];
-    const mRoot = key.midi + m.off;
-    const mi = { midi: mRoot, type: m.type,
-                 name: pcName(mRoot, sp.mi) + TYPE_SUFFIX[m.type],
-                 roman: m.roman };
-
-    /* tritone sub of the secondary dominant: a dom7 a half step above the target */
-    const ts = { midi: root + 1, type: 'dom7',
-                 name: pcName(root + 1, sp.ts) + '7',
-                 roman: 'subV7/' + scaleData.labels[slot] };
-
-    /* leading-tone dim7: a half step below the target */
-    const ld = { midi: root - 1, type: 'dim7',
-                 name: pcName(root - 1, sp.ld) + 'dim7',
-                 roman: 'vii\u00b07/' + scaleData.labels[slot] };
-
-    return [dia, sd, mi, ts, ld];
+    return [dia, ...enabledTargetIds.map((id) => availableTargets[id])];
   }
 
   function targetYs(y0) {
-    const d1   = Math.max(fontSize * 1.45, 46);
-    const room = y0 - 28 - d1;                         /* space above line 1 */
-    const sp   = clamp(room / 3, 30, Math.max(fontSize, 38));
-    return [y0, y0 - d1, y0 - d1 - sp, y0 - d1 - 2 * sp, y0 - d1 - 3 * sp];
+    if (enabledTargetIds.length <= 4) {
+      const firstOffset = Math.max(fontSize * 1.45, 46);
+      const room = y0 - 28 - firstOffset;
+      const spacing = clamp(room / 3, 30, Math.max(fontSize, 38));
+      return [
+        y0,
+        ...enabledTargetIds.map((_, index) => y0 - firstOffset - index * spacing),
+      ];
+    }
+
+    const firstOffset = Math.max(fontSize * 1.45, 46);
+    const available = Math.max(0, y0 - firstOffset - targetSafeTop);
+    const spacing = enabledTargetIds.length > 1
+      ? available / (enabledTargetIds.length - 1)
+      : 0;
+    return [
+      y0,
+      ...enabledTargetIds.map((_, index) =>
+        y0 - firstOffset - spacing * index),
+    ];
+  }
+
+  function updateTargetSafeTop() {
+    targetSafeTop = pianoToggleForTargets.getBoundingClientRect().bottom + 38;
   }
 
   function targetYsFor(el) {
@@ -1953,10 +3347,181 @@
 
   const tSel = { el: null, k: 0 };   /* chord whose targets are showing + previewed target */
   const tPos = { x: 0, y: 0 };       /* smoothed anchor for the drawn lines */
+  const settingsToggle = document.getElementById('settingsToggle');
+  const settingsPanel = document.getElementById('settingsPanel');
+  const targetOrder = document.getElementById('targetOrder');
+  const targetTypeSelect = document.getElementById('targetTypeSelect');
+  const targetAddButton = document.getElementById('targetAddButton');
+  const targetSettingsReset = document.getElementById('targetSettingsReset');
 
-  function startTarget(el, k) {
-    const c = targetsFor(el)[k];
-    return startChord(c.midi, c.type, masterVol);
+  function closeTargetSettings() {
+    settingsPanel.hidden = true;
+    settingsToggle.setAttribute('aria-expanded', 'false');
+  }
+
+  function persistTargetSettings() {
+    try {
+      localStorage.setItem(TARGET_SETTINGS_KEY, JSON.stringify(enabledTargetIds));
+    } catch (error) {
+      console.warn('Unable to save chord target settings.', error);
+    }
+  }
+
+  function updateTargetSettings() {
+    syncTargetRows();
+    targetOrder.replaceChildren();
+
+    for (const id of enabledTargetIds.slice().reverse()) {
+      const definition = targetDefinitions.get(id);
+      const row = document.createElement('div');
+      row.className = 'target-order-row';
+      row.dataset.targetId = id;
+
+      const grip = document.createElement('button');
+      grip.type = 'button';
+      grip.className = 'target-order-grip';
+      grip.setAttribute('aria-label', 'Reorder ' + definition.name + ' with arrow keys or drag');
+      grip.textContent = '\u22ee\u22ee';
+      grip.addEventListener('keydown', (event) => {
+        if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+        const other = event.key === 'ArrowUp'
+          ? row.previousElementSibling
+          : row.nextElementSibling;
+        if (!other || other.classList.contains('fixed')) return;
+        if (event.key === 'ArrowUp') targetOrder.insertBefore(row, other);
+        else targetOrder.insertBefore(other, row);
+        commitTargetSettings();
+        const movedGrip = targetOrder.querySelector(
+          `.target-order-row[data-target-id="${id}"] .target-order-grip`);
+        movedGrip.focus();
+        event.preventDefault();
+      });
+
+      const copy = document.createElement('span');
+      copy.className = 'target-order-copy';
+      const name = document.createElement('span');
+      name.className = 'target-order-name';
+      name.textContent = definition.name;
+      const detail = document.createElement('span');
+      detail.className = 'target-order-detail';
+      detail.textContent = definition.detail;
+      copy.append(name, detail);
+
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'target-order-remove';
+      remove.setAttribute('aria-label', 'Remove ' + definition.name);
+      remove.textContent = '\u00d7';
+      remove.addEventListener('click', () => {
+        enabledTargetIds = enabledTargetIds.filter((targetId) => targetId !== id);
+        commitTargetSettings();
+      });
+
+      row.append(grip, copy, remove);
+      targetOrder.append(row);
+    }
+
+    const fixedRow = document.createElement('div');
+    fixedRow.className = 'target-order-row fixed';
+    const fixedCopy = document.createElement('span');
+    fixedCopy.className = 'target-order-copy';
+    const fixedName = document.createElement('span');
+    fixedName.className = 'target-order-name';
+    fixedName.textContent = 'Diatonic chord';
+    const fixedDetail = document.createElement('span');
+    fixedDetail.className = 'target-order-detail';
+    fixedDetail.textContent = 'Main chord in the current key';
+    fixedCopy.append(fixedName, fixedDetail);
+    fixedRow.append(document.createElement('span'), fixedCopy);
+    targetOrder.append(fixedRow);
+
+    const unusedTargets = TARGET_DEFINITIONS.filter((definition) =>
+      !enabledTargetIds.includes(definition.id));
+    targetTypeSelect.replaceChildren(...unusedTargets.map((definition) => {
+      const option = document.createElement('option');
+      option.value = definition.id;
+      option.textContent = definition.name;
+      return option;
+    }));
+    targetAddButton.disabled = unusedTargets.length === 0;
+  }
+
+  function commitTargetSettings() {
+    persistTargetSettings();
+    updateTargetSettings();
+    tSel.el = null;
+    tSel.k = 0;
+    tEls.forEach((row) => { row.key = ''; });
+  }
+
+  targetAddButton.addEventListener('click', () => {
+    const id = targetTypeSelect.value;
+    if (!targetDefinitions.has(id) || enabledTargetIds.includes(id)) return;
+    enabledTargetIds.push(id);
+    commitTargetSettings();
+  });
+  targetSettingsReset.addEventListener('click', () => {
+    enabledTargetIds = TARGET_DEFAULTS.slice();
+    commitTargetSettings();
+  });
+
+  targetOrder.addEventListener('pointerdown', (event) => {
+    const grip = event.target.closest('.target-order-grip');
+    if (!grip || event.button !== 0) return;
+    const row = grip.closest('.target-order-row');
+    row.classList.add('dragging');
+    targetOrder.setPointerCapture(event.pointerId);
+    targetOrder._draggedRow = row;
+    event.preventDefault();
+  });
+  targetOrder.addEventListener('pointermove', (event) => {
+    const draggedRow = targetOrder._draggedRow;
+    if (!draggedRow || !targetOrder.hasPointerCapture(event.pointerId)) return;
+    const rows = [...targetOrder.querySelectorAll('.target-order-row:not(.fixed)')]
+      .filter((row) => row !== draggedRow);
+    const before = rows.find((row) => event.clientY < row.getBoundingClientRect().top +
+      row.getBoundingClientRect().height / 2);
+    const fixedRow = targetOrder.querySelector('.target-order-row.fixed');
+    targetOrder.insertBefore(draggedRow, before || fixedRow);
+  });
+  function finishTargetReorder(event) {
+    const draggedRow = targetOrder._draggedRow;
+    if (!draggedRow || !targetOrder.hasPointerCapture(event.pointerId)) return;
+    draggedRow.classList.remove('dragging');
+    targetOrder._draggedRow = null;
+    enabledTargetIds = [...targetOrder.querySelectorAll('.target-order-row:not(.fixed)')]
+      .map((row) => row.dataset.targetId).reverse();
+    commitTargetSettings();
+  }
+  targetOrder.addEventListener('pointerup', finishTargetReorder);
+  targetOrder.addEventListener('pointercancel', finishTargetReorder);
+  targetOrder.addEventListener('lostpointercapture', finishTargetReorder);
+  settingsToggle.addEventListener('click', () => {
+    const opening = settingsPanel.hidden;
+    settingsPanel.hidden = !opening;
+    settingsToggle.setAttribute('aria-expanded', String(opening));
+    if (opening) targetTypeSelect.focus();
+  });
+  settingsPanel.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      closeTargetSettings();
+      settingsToggle.focus();
+    }
+  });
+
+  updateTargetSettings();
+
+
+  function chordForNote(el, target = 0) {
+    if (target > 0) return targetsFor(el)[target];
+    const slot = Number(el.dataset.slot);
+    const quality = scaleData.qualities[slot];
+    return {
+      midi: KEYS[keyIdx].midi + scaleData.intervals[slot],
+      type: quality,
+      name: scaleData.notes[slot] + TYPE_SUFFIX[quality],
+      id: 'diatonic',
+    };
   }
 
   /* is the pointer inside the chord's column, from well below it
@@ -1998,21 +3563,7 @@
   /* decide which chord's targets are showing and which one is selected */
   function computeSel() {
     let selEl = null, k = 0;
-
-    if (held && !held.el._dying && held.el._blob) {
-      if (!held.armed &&
-          Math.hypot(dragPt.x - held.px0, dragPt.y - held.py0) > DRAG_ARM) {
-        held.armed = true;
-      }
-      if (!held.armed) {
-        /* haven't moved yet: the selection is simply what's being held */
-        selEl = held.el;
-        k = held.target;
-      } else {
-        selEl = hoverColumn(dragPt.x, dragPt.y, tSel.el);
-        if (selEl) k = pickLevel(selEl, dragPt.y, tSel);
-      }
-    } else if (!held && pointer.active) {
+    if (pointer.active) {
       selEl = hoverColumn(pointer.x, pointer.y, tSel.el);
       if (selEl) k = pickLevel(selEl, pointer.y, tSel);
     }
@@ -2070,6 +3621,12 @@
     return { x: (left + right) / 2, y: (top + bottom) / 2, r };
   }
 
+  function targetIndexFor(chord) {
+    if (!chord || chord.targetId === 'diatonic') return 0;
+    const index = enabledTargetIds.indexOf(chord.targetId);
+    return index < 0 ? 0 : index + 1;
+  }
+
   /* blob anchor for target k of chord el, if its label is currently drawn */
   function targetBlob(el, k) {
     if (tEl === el && tAlpha > 0 && k >= 1 && k <= tEls.length) return labelBlob(tEls[k - 1]);
@@ -2097,8 +3654,15 @@
     tAlpha += ((selEl ? 1 : 0) - tAlpha) * (1 - Math.exp(-dt / 110));
     if (tAlpha < 0.004) tAlpha = 0;
 
-    const nameFs = Math.max(fontSize * 0.34, 11);
-    const romFs  = Math.max(fontSize * 0.2, 8.5);
+    const targetPositions = targetYs(tPos.y);
+    const targetSpacing = enabledTargetIds.length > 4
+      ? Math.max(0, targetPositions[1] - (targetPositions[2] ?? targetPositions[1]))
+      : Math.max(fontSize, 38);
+    const compactScale = enabledTargetIds.length <= 4
+      ? 1
+      : clamp(targetSpacing / 30, 0.65, 1);
+    const nameFs = Math.max(fontSize * 0.34, 11) * compactScale;
+    const romFs  = Math.max(fontSize * 0.2, 8.5) * compactScale;
     const halfW  = slotW * 0.42;
 
     if (!tEl || tEl._dying || !tEl._blob) {
@@ -2109,10 +3673,9 @@
       if (tAlpha) {
         const ys     = targetYs(tPos.y);
         const chords = targetsFor(tEl);
-        /* the chord being held, if its own column is the one showing */
-        const heldK = held && held.el === tEl
-          ? held.target
-          : latchedChord && latchedChord.el === tEl ? latchedChord.target : 0;
+        const heldK = latchedChord && latchedChord.el === tEl
+          ? targetIndexFor(latchedChord)
+          : 0;
 
         for (let i = 0; i < tEls.length; i++) {
           const t  = tEls[i];
@@ -2122,7 +3685,7 @@
           setLabel(t, chords[i + 1]);
           placeLine(t, tPos.x, ys[i + 1], halfW, nameFs, romFs);
 
-          t.line.classList.toggle('held', hl);
+          t.line.classList.toggle('latched', hl);
           t.line.classList.toggle('on', on);
           t.name.classList.toggle('on', on || hl);
           t.rom.classList.toggle('on', on || hl);
@@ -2130,15 +3693,13 @@
       }
     }
 
-    /* ---- keep a held target chord's line on screen while dragging away ---- */
-    const pinnedChord = rightPreview
-      ? rightPreview.target > 0 ? rightPreview : null
-      : held && held.target > 0
-        ? held
-        : latchedChord && latchedChord.target > 0 ? latchedChord : null;
+    /* ---- keep a latched target chord's line on screen while pointer moves away ---- */
+    const activeChord = rightPreview || latchedChord;
+    const pinnedChord = activeChord && targetIndexFor(activeChord) > 0 ? activeChord : null;
+    const pinnedTargetIndex = targetIndexFor(pinnedChord);
     const pin = !!(pinnedChord && !pinnedChord.el._dying && pinnedChord.el._blob &&
-                   selEl !== pinnedChord.el);
-    if (pin) { pEl = pinnedChord.el; pK = pinnedChord.target; }
+                   pinnedTargetIndex > 0 && selEl !== pinnedChord.el);
+    if (pin) { pEl = pinnedChord.el; pK = pinnedTargetIndex; }
 
     pAlpha += ((pin ? 1 : 0) - pAlpha) * (1 - Math.exp(-dt / 110));
     if (pAlpha < 0.004) pAlpha = 0;
@@ -2182,7 +3743,7 @@
   const histSave     = document.getElementById('histSave');
   const histArchive  = document.getElementById('histArchive');
   const histPlay     = document.getElementById('histPlay');
-  const histEntryMode = document.getElementById('histEntryMode');
+  const notePlaybackToggle = document.getElementById('notePlaybackToggle');
   const histPopover  = document.getElementById('histPopover');
   const histStatus   = document.getElementById('histStatus');
   let histEntries    = [];
@@ -2197,6 +3758,90 @@
   let recoveryProgression = null;
   let currentProgressionSaved = false;
   let progressionPlayback = null;
+  const pianoIndicator = document.getElementById('pianoIndicator');
+  const pianoToggle = document.getElementById('pianoToggle');
+  const pianoCaption = document.getElementById('pianoCaption');
+  const pianoKeys = Array.from(document.querySelectorAll('#pianoKeys [data-pc]'));
+  const inversionIndicator = document.getElementById('inversionIndicator');
+  const inversionOptions = Array.from(
+    inversionIndicator.querySelectorAll('[data-inversion]'));
+  const heldInversionKeys = new Set();
+  let pianoChordSignature = '';
+
+  function inversionLabel(number) {
+    const ordinal = ['1st', '2nd', '3rd'][number - 1];
+    return `${ordinal} inversion`;
+  }
+
+  function updateInversionIndicator() {
+    const activeKey = Array.from(heldInversionKeys).pop();
+    heldInversion = activeKey === undefined ? null : Number(activeKey);
+    const visible = heldInversion !== null;
+    inversionIndicator.classList.toggle('visible', visible);
+    inversionIndicator.setAttribute('aria-hidden', String(!visible));
+    inversionIndicator.setAttribute('aria-label', visible
+      ? `${inversionLabel(heldInversion)} selected`
+      : 'Chord inversion shortcuts');
+    for (const option of inversionOptions) {
+      const selected = Number(option.dataset.inversion) === heldInversion;
+      option.classList.toggle('selected', selected);
+      if (selected) option.setAttribute('aria-current', 'true');
+      else option.removeAttribute('aria-current');
+    }
+  }
+
+  function chordWithHeldInversion(chord) {
+    const inversion = heldInversion === null ? 0 : heldInversion;
+    const voiceCount = (CHORD_TYPES[chord.type] || CHORD_TYPES.maj).length;
+    if (inversion >= voiceCount) {
+      showHistStatus(
+        `${inversionLabel(heldInversion)} is unavailable for ${chord.name} (${voiceCount}-note chord).`,
+        true);
+      return null;
+    }
+    return { ...chord, inversion };
+  }
+
+  pianoToggle.addEventListener('click', () => {
+    const collapsed = pianoIndicator.classList.toggle('collapsed');
+    pianoToggle.classList.toggle('collapsed', collapsed);
+    pianoToggle.setAttribute('aria-expanded', String(!collapsed));
+    pianoToggle.setAttribute('aria-label',
+      collapsed ? 'Show piano chord indicator' : 'Hide piano chord indicator');
+  });
+
+  function updatePianoIndicator() {
+    let chord = null;
+    if (progressionPlayback && progressionPlayback.handle) {
+      chord = progressionPlayback.chords[progressionPlayback.index - 1];
+    } else if (rightPreview) {
+      chord = rightPreview.chord;
+    } else if (tSel.el && !tSel.el._dying) {
+      chord = chordForNote(tSel.el, tSel.k);
+    } else if (latchedChord && !latchedChord.el._dying) {
+      chord = latchedChord.chord;
+    } else {
+      chord = chordForNote(noteEls[0]);
+    }
+
+    const name = chord.type === 'maj'
+      ? `${chord.name || pcName(chord.midi, false)} major`
+      : chord.name || `${pcName(chord.midi, false)}${TYPE_SUFFIX[chord.type] || ''}`;
+    const signature = `${chord.midi % 12}:${chord.type}:${name}`;
+    if (signature === pianoChordSignature) return;
+    pianoChordSignature = signature;
+    pianoCaption.textContent = name;
+    pianoIndicator.setAttribute('aria-label', `${name} chord shown on piano keys`);
+
+    const root = ((chord.midi % 12) + 12) % 12;
+    const tones = new Set((CHORD_TYPES[chord.type] || CHORD_TYPES.maj)
+      .map((interval) => (root + interval) % 12));
+    for (const key of pianoKeys) {
+      const pitch = Number(key.dataset.pc);
+      key.classList.toggle('selected', tones.has(pitch));
+      key.classList.toggle('root', pitch === root);
+    }
+  }
 
   function showHistStatus(message, isError) {
     histStatus.textContent = message;
@@ -2229,6 +3874,7 @@
   }
 
   function renderHistory(popIndex = null) {
+    histBar.classList.toggle('has-progression', histEntries.length > 0);
     histTrack.textContent = '';
     const caret = document.createElement('span');
     caret.className = 'hist-caret';
@@ -2239,12 +3885,24 @@
       item.className = 'hist-item' + (i ? ' later' : '') +
         (popIndex === null || popIndex === i ? ' pop' : '');
       item.textContent = chord.name;
+      appendInversionMarker(item, chord);
       histTrack.appendChild(item);
     });
     if (histCursor === histEntries.length) histTrack.appendChild(caret);
     hist.classList.toggle('editing', histCursor !== null);
     hist.setAttribute('aria-label',
       `Chord progression editor, ${histEntries.length} chords. Click to place the cursor; use left and right arrows to move and Backspace to delete.`);
+  }
+
+  function appendInversionMarker(item, chord) {
+    const inversion = chord.inversion || 0;
+    if (!inversion) return;
+    const marker = document.createElement('sup');
+    marker.className = 'hist-inversion';
+    marker.textContent = String(inversion);
+    marker.title = `${inversionLabel(inversion)}`;
+    marker.setAttribute('aria-label', `${inversionLabel(inversion)}`);
+    item.appendChild(marker);
   }
 
   function progressionText(chords, format = 'key') {
@@ -2255,6 +3913,7 @@
   function sameProgression(a, b) {
     return a.length === b.length && a.every((chord, i) =>
       chord.name === b[i].name && chord.midi === b[i].midi && chord.type === b[i].type &&
+      (chord.inversion || 0) === (b[i].inversion || 0) &&
       (chord.roman || chord.name) === (b[i].roman || b[i].name));
   }
 
@@ -2284,6 +3943,8 @@
     histLastT = 0;
     currentProgressionSaved = false;
     histActiveT = -1e9;
+    histBar.classList.remove('tools-open');
+    if (histBar.contains(document.activeElement)) document.activeElement.blur();
     renderHistory(-1);
     histTrack.style.transition = 'none';
     histTrack.style.transform = 'translateX(0px)';
@@ -2307,14 +3968,30 @@
     hist.classList.remove('playing');
   }
 
+  function pauseProgressionPlaybackForModePicker() {
+    const state = progressionPlayback;
+    if (!state || state.pausedByModePicker) return null;
+    clearTimeout(state.timer);
+    state.timer = 0;
+    state.remainingMs = Math.max(0, state.nextAt - performance.now());
+    state.pausedByModePicker = true;
+    return state;
+  }
+
+  function resumeProgressionPlaybackAfterModePicker(state) {
+    if (!state || progressionPlayback !== state || !state.pausedByModePicker) return;
+    state.pausedByModePicker = false;
+    const delay = state.remainingMs ?? PLAY_BEAT_MS;
+    state.nextAt = performance.now() + delay;
+    state.timer = setTimeout(state.advance, delay);
+  }
+
   function startProgressionPlayback(chords, items, button) {
     cancelProgressionPlayback();
     audio();
-    stopPlaying();
     finishClickPreview();
     finishRightPreview(false);
     setLatchedChordPlaying(false);
-    if (held) releaseHold(true);
     const state = {
       chords: chords.map((chord) => ({ ...chord })),
       items: items || [],
@@ -2322,6 +3999,10 @@
       index: 0,
       handle: null,
       timer: 0,
+      nextAt: 0,
+      remainingMs: PLAY_BEAT_MS,
+      pausedByModePicker: false,
+      advance: null,
     };
     progressionPlayback = state;
     hist.classList.add('playing');
@@ -2332,7 +4013,7 @@
     }
 
     function advance() {
-      if (progressionPlayback !== state) return;
+      if (progressionPlayback !== state || state.pausedByModePicker) return;
       if (state.handle) {
         state.handle.release();
         state.handle = null;
@@ -2354,12 +4035,14 @@
         return;
       }
       const chord = state.chords[state.index++];
-      state.handle = startChord(chord.midi, chord.type, masterVol);
+      state.handle = startChord(chord.midi, chord.type, masterVol, chord.inversion || 0);
       const activeItem = state.items[state.index - 1];
       if (activeItem) activeItem.classList.add('active');
+      state.nextAt = performance.now() + PLAY_BEAT_MS;
       state.timer = setTimeout(advance, PLAY_BEAT_MS);
     }
 
+    state.advance = advance;
     advance();
   }
 
@@ -2390,7 +4073,9 @@
     histActiveT = now;
 
     /* Ignore an immediate duplicate retrigger, not a repeated chord later. */
-    if (!force && histCursor === null && chord.name === histLast && now - histLastT < 400) {
+    if (!force && histCursor === null && chord.name === histLast &&
+        (chord.inversion || 0) === (histEntries.length ? histEntries[histEntries.length - 1].inversion || 0 : 0) &&
+        now - histLastT < 400) {
       histLastT = now;
       return;
     }
@@ -2402,6 +4087,7 @@
       midi: chord.midi,
       type: chord.type,
       roman: chord.roman,
+      inversion: chord.inversion || 0,
     };
     currentProgressionSaved = false;
     const insertAt = histCursor === null ? histEntries.length : histCursor;
@@ -2426,15 +4112,20 @@
     hist.focus({ preventScroll: true });
   }
 
+  function exitHistoryEditing() {
+    if (histCursor === null) return;
+    histCursor = null;
+    histLast = '';
+    histLastT = 0;
+    histActiveT = performance.now();
+    renderHistory(-1);
+  }
+
   function editHistoryFromKey(event) {
     if (histCursor === null || event.altKey || event.ctrlKey || event.metaKey) return;
     if (event.key === 'Escape') {
       event.preventDefault();
-      histCursor = null;
-      histLast = '';
-      histLastT = 0;
-      histActiveT = performance.now();
-      renderHistory(-1);
+      exitHistoryEditing();
     } else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
       event.preventDefault();
       const step = event.key === 'ArrowLeft' ? -1 : 1;
@@ -2455,10 +4146,6 @@
     } else if (event.key === 'Backspace') {
       event.preventDefault();
     }
-  }
-
-  function logChord(el, k) {
-    pushHistory(targetsFor(el)[k]);
   }
 
   function restoreProgression(progression, isSaved) {
@@ -2521,6 +4208,7 @@
       const item = document.createElement('span');
       item.className = 'hist-item';
       item.textContent = chord.name;
+      appendInversionMarker(item, chord);
       chords.appendChild(item);
     });
     chords.addEventListener('click', () => restoreProgression(progression, isSaved));
@@ -2668,6 +4356,9 @@
         chord && typeof chord.name === 'string' &&
         Number.isInteger(chord.midi) && chord.midi >= 0 && chord.midi <= 127 &&
         Object.prototype.hasOwnProperty.call(CHORD_TYPES, chord.type) &&
+        (chord.inversion === undefined ||
+          (Number.isInteger(chord.inversion) && chord.inversion >= 0 &&
+            chord.inversion < CHORD_TYPES[chord.type].length)) &&
         (chord.roman === undefined || typeof chord.roman === 'string'));
   }
 
@@ -2716,7 +4407,8 @@
       histEntries.forEach((chord, index) => {
         const start = index * ticksPerChord;
         const end = start + ticksPerChord;
-        const pitches = [chord.midi - 12, ...CHORD_TYPES[chord.type].map((n) => chord.midi + n)];
+        const pitches = chordVoicing(chord.type, chord.inversion || 0)
+          .map((part) => chord.midi + part.semitones);
         pitches.forEach((pitch) => {
           const note = clamp(pitch, 0, 127);
           events.push({ tick: start, order: 1, bytes: [0x90, note, 88] });
@@ -2830,12 +4522,7 @@
       chords.forEach((chord, index) => {
         const start = index * secondsPerChord;
         const end = start + secondsPerChord;
-        const intervals = CHORD_TYPES[chord.type];
-        const parts = [{ semitones: -12, weight: 0.45 },
-          ...intervals.map((semitones, i) => ({
-            semitones,
-            weight: [1, 0.85, 0.75, 0.65][i],
-          }))];
+        const parts = chordVoicing(chord.type, chord.inversion || 0);
         const totalWeight = parts.reduce((sum, part) => sum + part.weight, 0);
 
         parts.forEach((part) => {
@@ -2958,25 +4645,7 @@
     else if (histEntries.length) histActiveT = performance.now();
   });
   histPlay.addEventListener('click', playProgression);
-  histEntryMode.addEventListener('click', () => {
-    const useLatchMode = entryMode !== 'latch';
-    finishRightPreview(false);
-    clearLatchedChord();
-    stopPlaying();
-    if (held) releaseHold(true);
-    pending = null;
-    entryMode = useLatchMode ? 'latch' : 'hover';
-    activeNotePlaybackEnabled = useLatchMode;
-    histEntryMode.textContent = useLatchMode ? 'entry: click' : 'entry: hover';
-    histEntryMode.setAttribute('aria-pressed', String(useLatchMode));
-    histEntryMode.setAttribute('aria-label', useLatchMode
-      ? 'Switch to hover-to-play entry mode'
-      : 'Switch to click-to-add entry mode');
-    showHistStatus(useLatchMode
-      ? 'Click-to-add mode: click a chord to add it; middle-click toggles active-note playback, and right-click previews.'
-      : 'Hover-to-play mode enabled.');
-    if (useLatchMode) showPlaybackIndicator(true);
-  });
+  notePlaybackToggle.addEventListener('click', toggleLatchedPlayback);
 
   histBar.addEventListener('pointerenter', (event) => {
     if (event.pointerType === 'touch') return;
@@ -2986,6 +4655,7 @@
   });
   hist.addEventListener('click', (event) => placeHistoryCursor(event.clientX));
   window.addEventListener('keydown', (event) => {
+    if (!modePicker.hidden) return;
     if (event.code === 'Space' && !event.repeat) {
       event.preventDefault();
       event.stopPropagation();
@@ -3026,6 +4696,9 @@
     }, 0);
   });
   window.addEventListener('pointerdown', (event) => {
+    if (histCursor !== null && !hist.contains(event.target)) {
+      exitHistoryEditing();
+    }
     if (!histBar.contains(event.target)) {
       closeArchive();
       closeExportMenu();
@@ -3046,6 +4719,7 @@
     }
   });
   window.addEventListener('keydown', (event) => {
+    if (!modePicker.hidden) return;
     if (event.key === 'Escape' && histExportWrap.classList.contains('open')) {
       closeExportMenu();
       histExport.focus();
@@ -3070,8 +4744,6 @@
   /* ---------- pointer tracking with velocity ---------- */
 
   window.addEventListener('pointermove', (e) => {
-    dragPt.x = e.clientX;
-    dragPt.y = e.clientY;
     if (e.pointerType === 'touch') return;
     const now = performance.now();
     if (lastMoveT) {
@@ -3088,19 +4760,42 @@
     pointer.x = e.clientX;
     pointer.y = e.clientY;
     pointer.active = true;
+    if (rightPreview && rightPreview.pointerId === e.pointerId && (e.buttons & 2)) {
+      const selection = e.clientY <= cutoffY
+        ? chordAtPoint(e.clientX, e.clientY)
+        : null;
+      if (selection) previewRightClick(selection, e);
+    }
   }, { passive: true });
 
   window.addEventListener('pointerdown', onPointerDown);
+  window.addEventListener('mousedown', (event) => {
+    if (event.button === 0 && (event.buttons & 2) && rightPreview) {
+      const activePreview = rightPreview;
+      onPointerDown(event);
+      if (rightPreview !== activePreview && (event.buttons & 2)) {
+        const selection = event.clientY <= cutoffY
+          ? chordAtPoint(event.clientX, event.clientY)
+          : null;
+        if (selection) {
+          previewRightClick(selection, { pointerId: activePreview.pointerId });
+        }
+      }
+    }
+  });
   window.addEventListener('pointerup', onPointerUp);
+  window.addEventListener('mouseup', (event) => {
+    if (event.button === 0 && clickPreview && clickPreview.pointerId == null) {
+      finishClickPreview();
+    }
+  });
   window.addEventListener('pointercancel', (event) => {
     finishClickPreview(event);
     finishRightPreview(true, event);
-    releaseHold(true);
   });
   window.addEventListener('contextmenu', (event) => {
-    if (entryMode !== 'latch') return;
     if (event.target && event.target.closest &&
-        event.target.closest('.histbar, .mode-wheel, .arrow')) return;
+        event.target.closest('.histbar, .mode-wheel, .mode-picker, .arrow, .piano-toggle, .note-playback-toggle, .settings-panel, .settings-toggle')) return;
     event.preventDefault();
   });
 
@@ -3112,7 +4807,6 @@
     pointer.active = false;
     finishClickPreview();
     finishRightPreview();
-    releaseHold();
   });
 
   /* ---------- animation loop ---------- */
@@ -3122,6 +4816,7 @@
 
     const dt = lastT ? Math.min(64, now - lastT) : 16;
     lastT = now;
+    if (!modePicker.hidden) return;
 
     if (lastMoveT && now - lastMoveT > 60) {
       const decay = Math.exp(-dt / 120);
@@ -3157,29 +4852,27 @@
        is mid-slide or mid-vertical-shift. */
     const nearAll = nearestNote(null);
     if (nearAll) measureNoteBlob(nearAll.el);
-    if (held && held.el && !held.el._dying) measureNoteBlob(held.el);
     if (latchedChord && !latchedChord.el._dying) measureNoteBlob(latchedChord.el);
     if (clickPreview && !clickPreview.el._dying) measureNoteBlob(clickPreview.el);
     if (rightPreview && !rightPreview.el._dying) measureNoteBlob(rightPreview.el);
 
+    updateTargetSafeTop();
     computeSel();
-    updateAudio();
+    updatePianoIndicator();
     syncPlayingClass();
     drawTargets(dt);
 
-    if (held || playing || latchedChord || clickPreview || rightPreview || progressionPlayback) histActiveT = now;
+    if (latchedChord || clickPreview || rightPreview || progressionPlayback) histActiveT = now;
     beginHistoryClear(now);
 
-    /* ---------------- solid layer (held or latched chord) ---------------- */
+    /* ---------------- solid layer (latched chord) ---------------- */
     let solidTarget = 0;
 
     const solidChord = rightPreview && !rightPreview.el._dying
       ? rightPreview
       : clickPreview && !clickPreview.el._dying
         ? { ...latchedChord, el: clickPreview.el, handle: clickPreview.handle }
-        : held && !held.el._dying
-          ? held
-          : latchedChord && !latchedChord.el._dying ? latchedChord : null;
+        : latchedChord && !latchedChord.el._dying ? latchedChord : null;
 
     if (solidChord && solidChord.el._blob && pointer.active) {
       const el = solidChord.el;
@@ -3190,7 +4883,8 @@
         let hr = el._blob.r;
 
         /* Target chords anchor the solid blob to their drawn label. */
-        const lb = solidChord.target > 0 ? targetBlob(el, solidChord.target) : null;
+        const solidTargetIndex = targetIndexFor(solidChord);
+        const lb = solidTargetIndex > 0 ? targetBlob(el, solidTargetIndex) : null;
         if (lb) { hx = lb.x; hy = lb.y; hr = lb.r; }
 
         if (!solid.init) {
@@ -3232,13 +4926,13 @@
     let dashedTarget = null;
     if (tSel.el && tSel.k > 0) {
       /* a target line is selected: the blob's chord side moves up to it
-         (unless it's already the solid, held one) */
+         (unless it's already the solid chord) */
       const isSolidSel = !!(solidChord &&
-        tSel.el === solidChord.el && tSel.k === solidChord.target);
+        tSel.el === solidChord.el && tSel.k === targetIndexFor(solidChord));
       const lb = isSolidSel ? null : targetBlob(tSel.el, tSel.k);
       if (lb) dashedTarget = { el: tSel.el, bx: lb.x, by: lb.y, r: lb.r };
     } else if (nearAll && pointer.y <= cutoffY &&
-               (!solidChord || nearAll.el !== solidChord.el || solidChord.target > 0)) {
+               (!solidChord || nearAll.el !== solidChord.el || targetIndexFor(solidChord) > 0)) {
       dashedTarget = nearAll;
     }
 
@@ -3301,9 +4995,10 @@
     modeArcPath.setAttribute('d',
       `M 0 0 A ${modeRadius} ${modeRadius} 0 0 1 0 ${modeRadius * 2}`);
     updateModeWheel(false);
+    updateTargetSafeTop();
 
-    slotW    = total / 8;
-    fontSize = Math.max(15, Math.min(46, slotW * 0.6));
+    slotW    = total / (scaleCardinality + 1);
+    fontSize = Math.max(scaleCardinality > 7 ? 9 : 15, Math.min(46, slotW * 0.6));
     interactDist = fontSize * 3;
 
     document.documentElement.style.setProperty('--slotw', slotW.toFixed(2) + 'px');
@@ -3321,25 +5016,20 @@
   /* ================= boot ================= */
 
   layout();
-  noteEls = scaleData.notes.map((n, i) => {
-    const el = buildNote(n, scaleData.labels[i]);
-    placeNote(el, i);
-    notesEl.appendChild(el);
-    measureNoteBlob(el);
-    return el;
-  });
+  rebuildScaleNotes();
 
   prevBtn.addEventListener('click', () => { audio(); shift(true);  });
   nextBtn.addEventListener('click', () => { audio(); shift(false); });
 
   modeWheel.addEventListener('pointerdown', (event) => {
     if (event.button !== undefined && event.button !== 0) return;
+    const now = performance.now();
     event.preventDefault();
     const choice = event.target.closest('.mode-choice');
     modeDrag = {
       pointerId: event.pointerId,
       lastY: event.clientY,
-      lastTime: performance.now(),
+      lastTime: now,
       distance: 0,
       speed: 0,
       moved: false,
@@ -3375,8 +5065,24 @@
   });
   function finishModeDrag(event) {
     if (!modeDrag || (event && modeDrag.pointerId !== event.pointerId)) return;
-    if (event && event.type === 'pointerup' && !modeDrag.moved && modeDrag.choiceIndex !== null) {
-      selectMode(modeDrag.choiceIndex);
+    if (modeDrag.moved) {
+      lastModePointerPress = null;
+    } else if (event && event.type === 'pointerup') {
+      const now = performance.now();
+      const isDoublePress = lastModePointerPress &&
+        now - lastModePointerPress.time < 750 &&
+        Math.hypot(
+          event.clientX - lastModePointerPress.x,
+          event.clientY - lastModePointerPress.y
+        ) < 24;
+      if (isDoublePress) {
+        lastModePointerPress = null;
+        ignoreModeClickUntil = now + 500;
+        openModePicker();
+      } else {
+        lastModePointerPress = { time: now, x: event.clientX, y: event.clientY };
+        if (modeDrag.choiceIndex !== null) selectMode(modeDrag.choiceIndex);
+      }
     }
     suppressModeClick = modeDrag.moved;
     if (suppressModeClick) setTimeout(() => { suppressModeClick = false; }, 0);
@@ -3387,6 +5093,17 @@
   modeWheel.addEventListener('pointercancel', finishModeDrag);
   modeWheel.addEventListener('lostpointercapture', finishModeDrag);
   modeWheel.addEventListener('click', (event) => {
+    if (event.detail >= 2) {
+      event.preventDefault();
+      openModePicker();
+      ignoreModeClickUntil = 0;
+      return;
+    }
+    if (performance.now() < ignoreModeClickUntil) {
+      ignoreModeClickUntil = 0;
+      event.preventDefault();
+      return;
+    }
     if (suppressModeClick) {
       suppressModeClick = false;
       event.preventDefault();
@@ -3394,6 +5111,167 @@
     }
     const choice = event.target.closest('.mode-choice');
     if (choice) selectMode(Number(choice.dataset.mode));
+  });
+  document.addEventListener('dblclick', (event) => {
+    const bounds = modeWheel.getBoundingClientRect();
+    if (event.clientX < bounds.left || event.clientX > bounds.right ||
+        event.clientY < bounds.top || event.clientY > bounds.bottom) return;
+    event.preventDefault();
+    openModePicker();
+  }, true);
+  modeSetPrevious.addEventListener('click', () => cyclePickerFamily(-1));
+  modeSetNext.addEventListener('click', () => cyclePickerFamily(1));
+  modeSetDisplay.addEventListener('pointerdown', (event) => {
+    const interval = event.target.closest('.mode-set-step');
+    if (!interval || event.button !== 0) return;
+    const family = MODE_FAMILY_BY_ID.get(pickerFamilyId);
+    if (!family) return;
+    const initialSteps = pickerSteps.slice();
+    modeSetDrag = {
+      pointerId: event.pointerId,
+      initialSteps,
+      initialPresetModeName: pickerPresetModeName,
+      steps: initialSteps.slice(),
+      currentIndex: Number(interval.dataset.index),
+      lastX: event.clientX,
+    };
+    modeSetDisplay.setPointerCapture(event.pointerId);
+    modeSetDisplay.classList.add('dragging');
+    event.preventDefault();
+  });
+  modeSetDisplay.addEventListener('pointermove', (event) => {
+    if (!modeSetDrag || modeSetDrag.pointerId !== event.pointerId) return;
+    const bounds = modeSetDisplay.getBoundingClientRect();
+    if (event.clientX < bounds.left || event.clientX > bounds.right ||
+        event.clientY < bounds.top || event.clientY > bounds.bottom) return;
+
+    const intervals = Array.from(modeSetDisplay.querySelectorAll('.mode-set-step'));
+    const currentIndex = modeSetDrag.currentIndex;
+    const pointerDelta = event.clientX - modeSetDrag.lastX;
+    modeSetDrag.lastX = event.clientX;
+    if (!pointerDelta) return;
+    const currentBounds = intervals[currentIndex].getBoundingClientRect();
+    const hysteresis = Math.max(6, modeSetDisplay.clientWidth * 0.01);
+    let nextIndex = currentIndex;
+
+    if (pointerDelta > 0 && currentIndex < intervals.length - 1) {
+      const nextBounds = intervals[currentIndex + 1].getBoundingClientRect();
+      const boundary = (currentBounds.right + nextBounds.left) / 2;
+      if (event.clientX > boundary + hysteresis) nextIndex++;
+    } else if (pointerDelta < 0 && currentIndex > 0) {
+      const previousBounds = intervals[currentIndex - 1].getBoundingClientRect();
+      const boundary = (previousBounds.right + currentBounds.left) / 2;
+      if (event.clientX < boundary - hysteresis) nextIndex--;
+    }
+    if (nextIndex === currentIndex) return;
+
+    const [step] = modeSetDrag.steps.splice(currentIndex, 1);
+    modeSetDrag.steps.splice(nextIndex, 0, step);
+    modeSetDrag.currentIndex = nextIndex;
+    pickerPresetModeName = null;
+    const changedIndexes = new Set();
+    for (let index = Math.min(currentIndex, nextIndex);
+      index <= Math.max(currentIndex, nextIndex);
+      index++) changedIndexes.add(index);
+    modeSetDisplay.setAttribute(
+      'aria-label',
+      `Reordering set: ${intervalPatternLabel(modeSetDrag.steps)}`,
+    );
+    renderModeSetSteps(modeSetDrag.steps, changedIndexes);
+  });
+  function finishModeSetDrag(event, commit) {
+    if (!modeSetDrag || modeSetDrag.pointerId !== event.pointerId) return;
+    const drag = modeSetDrag;
+    modeSetDrag = null;
+    modeSetDisplay.classList.remove('dragging');
+    const bounds = modeSetDisplay.getBoundingClientRect();
+    const releasedInside = event.clientX >= bounds.left && event.clientX <= bounds.right &&
+      event.clientY >= bounds.top && event.clientY <= bounds.bottom;
+    const familyId = canonicalSteps(drag.steps).join(',');
+    const family = MODE_FAMILY_BY_ID.get(familyId);
+    if (commit && releasedInside && family &&
+        family.distributionKey === pickerDistributionKey) {
+      pickerFamilyId = family.id;
+      pickerSteps = drag.steps;
+      updateModeSetDisplay(family, pickerSteps);
+    } else {
+      const selectedFamily = MODE_FAMILY_BY_ID.get(pickerFamilyId);
+      if (selectedFamily) {
+        pickerSteps = drag.initialSteps;
+        pickerPresetModeName = drag.initialPresetModeName;
+        updateModeSetDisplay(selectedFamily, pickerSteps, pickerPresetModeName);
+      }
+    }
+  }
+  modeSetDisplay.addEventListener('pointerup', (event) => finishModeSetDrag(event, true));
+  modeSetDisplay.addEventListener('pointercancel', (event) => finishModeSetDrag(event, false));
+  modeSetDisplay.addEventListener('lostpointercapture', (event) =>
+    finishModeSetDrag(event, false));
+  function onDistributionSelect(event) {
+    if (event.type !== 'click') {
+      const target = event.target.closest('[data-distribution]');
+      if (target) choosePickerDistribution(target.dataset.distribution);
+      return;
+    }
+
+    let closestDistribution = null;
+    let closestDistance = 24;
+    modeFamilyChart.querySelectorAll('.mode-family-hit').forEach((curve) => {
+      const length = curve.getTotalLength();
+      const samples = Math.max(100, Math.ceil(length / 2));
+      const screenTransform = curve.getScreenCTM();
+      if (!screenTransform) return;
+      const { a, b, c, d, e, f } = screenTransform;
+      for (let index = 0; index <= samples; index++) {
+        const point = curve.getPointAtLength(length * index / samples);
+        const dx = a * point.x + c * point.y + e - event.clientX;
+        const dy = b * point.x + d * point.y + f - event.clientY;
+        const distance = Math.hypot(dx, dy);
+        if (distance < closestDistance) {
+          closestDistance = distance;
+          closestDistribution = curve.dataset.distribution;
+        }
+      }
+    });
+    if (closestDistribution) choosePickerDistribution(closestDistribution);
+  }
+  modeFamilyChart.addEventListener('click', onDistributionSelect);
+  modeFamilyChart.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    onDistributionSelect(event);
+  });
+  modeCardinalityPrevious.addEventListener('click', () => changePickerCardinality(-1));
+  modeCardinalityNext.addEventListener('click', () => changePickerCardinality(1));
+  populateNamedScalePresets();
+  modePickerPresetsToggle.addEventListener('click', () => {
+    const shouldOpen = modePickerPresets.hidden;
+    modePickerPresets.hidden = !shouldOpen;
+    modePickerPresetsToggle.setAttribute('aria-expanded', String(shouldOpen));
+    if (shouldOpen) modePickerPresets.querySelector('button')?.focus();
+  });
+  modePickerCancel.addEventListener('click', closeModePicker);
+  modePickerApply.addEventListener('click', applyModeFamily);
+  document.addEventListener('pointerdown', (event) => {
+    if (!modePickerPresets.hidden && !modePickerPresetsControl.contains(event.target)) {
+      modePickerPresets.hidden = true;
+      modePickerPresetsToggle.setAttribute('aria-expanded', 'false');
+    }
+    if (!modePicker.hidden && !modePicker.contains(event.target) &&
+        !modeWheel.contains(event.target)) {
+      closeModePicker();
+    }
+  });
+  window.addEventListener('keydown', (event) => {
+    if (modePicker.hidden || event.key !== 'Escape') return;
+    event.preventDefault();
+    if (!modePickerPresets.hidden) {
+      modePickerPresets.hidden = true;
+      modePickerPresetsToggle.setAttribute('aria-expanded', 'false');
+      modePickerPresetsToggle.focus();
+      return;
+    }
+    closeModePicker();
   });
   modeWheel.addEventListener('keydown', (event) => {
     if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
@@ -3403,9 +5281,42 @@
   });
 
   window.addEventListener('keydown', (e) => {
+    if (!modePicker.hidden) return;
     if (e.defaultPrevented) return;
     if (e.key === 'ArrowLeft')  { e.preventDefault(); audio(); shift(true);  }
     if (e.key === 'ArrowRight') { e.preventDefault(); audio(); shift(false); }
+  });
+
+  function inversionDigit(event) {
+    const match = /^(?:Digit|Numpad)([1-3])$/.exec(event.code);
+    if (match) return match[1];
+    return /^[1-3]$/.test(event.key) ? event.key : null;
+  }
+
+  window.addEventListener('keydown', (event) => {
+    if (!modePicker.hidden) return;
+    const digit = inversionDigit(event);
+    if (!digit || event.repeat) return;
+    const target = event.target;
+    if (target && target.closest &&
+        target.closest('input, textarea, select, [contenteditable="true"]')) return;
+    heldInversionKeys.delete(digit);
+    heldInversionKeys.add(digit);
+    updateInversionIndicator();
+    updateRightPreviewInversion();
+  });
+  window.addEventListener('keyup', (event) => {
+    if (!modePicker.hidden) return;
+    const digit = inversionDigit(event);
+    if (!digit || !heldInversionKeys.has(digit)) return;
+    heldInversionKeys.delete(digit);
+    updateInversionIndicator();
+    updateRightPreviewInversion();
+  });
+  window.addEventListener('blur', () => {
+    heldInversionKeys.clear();
+    updateInversionIndicator();
+    updateRightPreviewInversion();
   });
 
   window.addEventListener('resize', layout);
