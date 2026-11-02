@@ -1208,11 +1208,17 @@
 
   const KEYS = [
     { midi: 60, notes: ['C',  'D',  'E',  'F',  'G',  'A',  'B',  'C'] },
+    { midi: 61, notes: ['Db', 'Eb', 'F',  'Gb', 'Ab', 'Bb', 'C',  'Db'] },
     { midi: 62, notes: ['D',  'E',  'F#', 'G',  'A',  'B',  'C#', 'D'] },
+    { midi: 63, notes: ['Eb', 'F',  'G',  'Ab', 'Bb', 'C',  'D',  'Eb'] },
     { midi: 64, notes: ['E',  'F#', 'G#', 'A',  'B',  'C#', 'D#', 'E'] },
+    { midi: 65, notes: ['F',  'G',  'A',  'Bb', 'C',  'D',  'E',  'F'] },
     { midi: 66, notes: ['F#', 'G#', 'A#', 'B',  'C#', 'D#', 'E#', 'F#'] },
+    { midi: 67, notes: ['G',  'A',  'B',  'C',  'D',  'E',  'F#', 'G'] },
     { midi: 68, notes: ['Ab', 'Bb', 'C',  'Db', 'Eb', 'F',  'G',  'Ab'] },
+    { midi: 69, notes: ['A',  'B',  'C#', 'D',  'E',  'F#', 'G#', 'A'] },
     { midi: 70, notes: ['Bb', 'C',  'D',  'Eb', 'F',  'G',  'A',  'Bb'] },
+    { midi: 71, notes: ['B',  'C#', 'D#', 'E',  'F#', 'G#', 'A#', 'B'] },
   ];
 
   function intervalsFromSteps(steps) {
@@ -1599,11 +1605,17 @@
      ld = leading-tone dim7: each true if it spells with flats */
   const KEY_FLATS = [
     { sd: false, mi: true,  ts: true,  ld: false },  /* C  */
+    { sd: true,  mi: true,  ts: true,  ld: true  },  /* Db */
     { sd: false, mi: true,  ts: true,  ld: false },  /* D  */
+    { sd: true,  mi: true,  ts: true,  ld: true  },  /* Eb */
     { sd: false, mi: false, ts: false, ld: false },  /* E  */
+    { sd: false, mi: true,  ts: true,  ld: false },  /* F  */
     { sd: false, mi: false, ts: false, ld: false },  /* F# */
+    { sd: false, mi: true,  ts: true,  ld: false },  /* G  */
     { sd: true,  mi: true,  ts: true,  ld: true  },  /* Ab */
+    { sd: false, mi: false, ts: false, ld: false },  /* A  */
     { sd: true,  mi: true,  ts: true,  ld: true  },  /* Bb */
+    { sd: false, mi: false, ts: false, ld: false },  /* B  */
   ];
   const SHARP_N = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
   const FLAT_N  = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
@@ -2631,64 +2643,91 @@
     updateModeWheel();
     const names = scaleData.notes;
     const labels = scaleData.labels;
-    const old   = noteEls.slice();
+    const sameScaleDegreeLetters = noteEls.every((el, slot) =>
+      el._label._pc.textContent === names[slot].charAt(0));
+    if (sameScaleDegreeLetters) {
+      noteEls.forEach((el, slot) => {
+        setNote(el, names[slot], labels[slot]);
+      });
+      setTimeout(() => { animating = false; }, DUR);
+      return;
+    }
+
+    const old = noteEls.slice();
     const noteCount = old.length;
     const lastSlot = noteCount - 1;
-    const next  = new Array(noteCount);
+    const next = new Array(noteCount);
 
     if (moveLeft) {
-      const ex = old[0];
-      ex._dying = true;
-      ex.style.pointerEvents = 'none';
-      slide(ex, 'translateX(0px)', `translateX(${-slotW}px)`, 1, 0, () => ex.remove());
+      const exiting = old[0];
+      exiting._dying = true;
+      exiting.style.pointerEvents = 'none';
+      slide(exiting, 'translateX(0px)', `translateX(${-slotW}px)`, 1, 0, () =>
+        exiting.remove());
 
-      for (let i = 1; i < noteCount; i++) {
-        const el      = old[i];
-        const newSlot = i - 1;
+      for (let index = 1; index < noteCount; index++) {
+        const el = old[index];
+        const newSlot = index - 1;
         setNote(el, names[newSlot], labels[newSlot]);
         placeNote(el, newSlot);
-        slide(el, `translateX(${i * slotW}px)`, `translateX(${newSlot * slotW}px)`);
+        slide(el, `translateX(${index * slotW}px)`, `translateX(${newSlot * slotW}px)`);
         next[newSlot] = el;
       }
 
-      const el = buildNote(names[lastSlot], labels[lastSlot]);
-      el.style.pointerEvents = 'none';
-      el.style.opacity       = '0';
-      el.style.transform     = `translateX(${noteCount * slotW}px)`;
-      notesEl.appendChild(el);
-      placeNote(el, lastSlot);
-      measureNoteBlob(el);
-      slide(el, `translateX(${noteCount * slotW}px)`, `translateX(${lastSlot * slotW}px)`, 0, 1, () => {
-        el.style.pointerEvents = '';
-      });
-      next[lastSlot] = el;
-
+      const entering = buildNote(names[lastSlot], labels[lastSlot]);
+      entering.style.pointerEvents = 'none';
+      entering.style.opacity = '0';
+      entering.style.transform = `translateX(${noteCount * slotW}px)`;
+      notesEl.appendChild(entering);
+      placeNote(entering, lastSlot);
+      measureNoteBlob(entering);
+      slide(
+        entering,
+        `translateX(${noteCount * slotW}px)`,
+        `translateX(${lastSlot * slotW}px)`,
+        0,
+        1,
+        () => { entering.style.pointerEvents = ''; },
+      );
+      next[lastSlot] = entering;
     } else {
-      const ex = old[lastSlot];
-      ex._dying = true;
-      ex.style.pointerEvents = 'none';
-      slide(ex, `translateX(${lastSlot * slotW}px)`, `translateX(${noteCount * slotW}px)`, 1, 0, () => ex.remove());
+      const exiting = old[lastSlot];
+      exiting._dying = true;
+      exiting.style.pointerEvents = 'none';
+      slide(
+        exiting,
+        `translateX(${lastSlot * slotW}px)`,
+        `translateX(${noteCount * slotW}px)`,
+        1,
+        0,
+        () => exiting.remove(),
+      );
 
-      for (let i = 0; i < lastSlot; i++) {
-        const el      = old[i];
-        const newSlot = i + 1;
+      for (let index = 0; index < lastSlot; index++) {
+        const el = old[index];
+        const newSlot = index + 1;
         setNote(el, names[newSlot], labels[newSlot]);
         placeNote(el, newSlot);
-        slide(el, `translateX(${i * slotW}px)`, `translateX(${newSlot * slotW}px)`);
+        slide(el, `translateX(${index * slotW}px)`, `translateX(${newSlot * slotW}px)`);
         next[newSlot] = el;
       }
 
-      const el = buildNote(names[0], labels[0]);
-      el.style.pointerEvents = 'none';
-      el.style.opacity       = '0';
-      el.style.transform     = `translateX(${-slotW}px)`;
-      notesEl.appendChild(el);
-      placeNote(el, 0);
-      measureNoteBlob(el);
-      slide(el, `translateX(${-slotW}px)`, 'translateX(0px)', 0, 1, () => {
-        el.style.pointerEvents = '';
-      });
-      next[0] = el;
+      const entering = buildNote(names[0], labels[0]);
+      entering.style.pointerEvents = 'none';
+      entering.style.opacity = '0';
+      entering.style.transform = `translateX(${-slotW}px)`;
+      notesEl.appendChild(entering);
+      placeNote(entering, 0);
+      measureNoteBlob(entering);
+      slide(
+        entering,
+        `translateX(${-slotW}px)`,
+        'translateX(0px)',
+        0,
+        1,
+        () => { entering.style.pointerEvents = ''; },
+      );
+      next[0] = entering;
     }
 
     noteEls = next;
@@ -5018,8 +5057,8 @@
   layout();
   rebuildScaleNotes();
 
-  prevBtn.addEventListener('click', () => { audio(); shift(true);  });
-  nextBtn.addEventListener('click', () => { audio(); shift(false); });
+  prevBtn.addEventListener('click', () => { audio(); shift(false); });
+  nextBtn.addEventListener('click', () => { audio(); shift(true);  });
 
   modeWheel.addEventListener('pointerdown', (event) => {
     if (event.button !== undefined && event.button !== 0) return;
@@ -5283,8 +5322,8 @@
   window.addEventListener('keydown', (e) => {
     if (!modePicker.hidden) return;
     if (e.defaultPrevented) return;
-    if (e.key === 'ArrowLeft')  { e.preventDefault(); audio(); shift(true);  }
-    if (e.key === 'ArrowRight') { e.preventDefault(); audio(); shift(false); }
+    if (e.key === 'ArrowLeft')  { e.preventDefault(); audio(); shift(false); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); audio(); shift(true);  }
   });
 
   function inversionDigit(event) {
