@@ -2636,16 +2636,16 @@
     if (animating || noteEls.length !== scaleCardinality + 1) return;
     animating = true;
 
+    const previousRootLetter = KEYS[keyIdx].notes[0].charAt(0);
     keyIdx = (keyIdx + (moveLeft ? 1 : -1) + KEYS.length) % KEYS.length;
+    const nextRootLetter = KEYS[keyIdx].notes[0].charAt(0);
     scaleData = buildScale(keyIdx, modeIdx);
     finishRightPreview(false);
     clearLatchedChord();
     updateModeWheel();
     const names = scaleData.notes;
     const labels = scaleData.labels;
-    const sameScaleDegreeLetters = noteEls.every((el, slot) =>
-      el._label._pc.textContent === names[slot].charAt(0));
-    if (sameScaleDegreeLetters) {
+    if (previousRootLetter === nextRootLetter) {
       noteEls.forEach((el, slot) => {
         setNote(el, names[slot], labels[slot]);
       });
